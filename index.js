@@ -3,7 +3,6 @@ const twilio = require('twilio');
 require('dotenv').config();
 
 const app = express();
-const port = 3000;
 
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
@@ -60,11 +59,11 @@ app.post('/process-input', express.urlencoded({ extended: false }), (req, res) =
 // 測試撥打電話
 app.post('/make-call', express.json(), async (req, res) => {
     try {
-        const { to } = req.body; // 獲取目標號碼
+        const { to } = req.body;
         const call = await client.calls.create({
-            url: 'https://twilio-api-t328.onrender.com/call', // 替換為你的伺服器地址
-            to, // 呼叫的用戶號碼
-            from: TWILIO_PHONE_NUMBER, // Twilio 號碼
+            url: 'https://twilio-api-t328.onrender.com/call',
+            to,
+            from: TWILIO_PHONE_NUMBER,
         });
 
         res.json({ message: 'Call initiated', callSid: call.sid });
@@ -74,7 +73,30 @@ app.post('/make-call', express.json(), async (req, res) => {
     }
 });
 
+// 截取撥打記錄
+app.get('/call-history', async (req, res) => {
+    try {
+        const calls = await client.calls.list({ limit: 20 });  // Fetch the last 20 calls (you can adjust the limit)
+        
+        const callData = calls.map(call => ({
+            sid: call.sid,
+            to: call.to,
+            from: call.from,
+            status: call.status,
+            duration: call.duration,
+            dateCreated: call.dateCreated,
+            dateUpdated: call.dateUpdated,
+            price: call.price,
+        }));
+        
+        res.json(callData);  // Send the call data as a JSON response
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error fetching call history', error: error.message });
+    }
+});
+
 // 啟動伺服器
 app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+    console.log(`Server is running on http://localhost:${PORT}`);
 });
