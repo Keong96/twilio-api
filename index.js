@@ -62,7 +62,7 @@ app.post('/make-call', express.json(), async (req, res) => {
     try {
         const { to } = req.body; // 獲取目標號碼
         const call = await client.calls.create({
-            url: 'http://localhost:3000/call', // 替換為你的伺服器地址
+            url: 'https://twilio-api-t328.onrender.com/call', // 替換為你的伺服器地址
             to, // 呼叫的用戶號碼
             from: TWILIO_PHONE_NUMBER, // Twilio 號碼
         });
