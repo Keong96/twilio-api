@@ -76,8 +76,34 @@ app.post('/make-call', express.json(), async (req, res) => {
 // 截取撥打記錄
 app.get('/call-history', async (req, res) => {
     try {
-        const calls = await client.calls.list({ limit: 20 });  // Fetch the last 20 calls (you can adjust the limit)
-        
+        const { month, year } = req.query;
+
+        const now = new Date();
+        const targetMonth = month ? parseInt(month) - 1 : now.getMonth();
+        const targetYear = year ? parseInt(year) : now.getFullYear();
+
+        const startOfMonth = new Date(targetYear, targetMonth, 1).toISOString();
+        const endOfMonth = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59).toISOString();
+
+        let calls = [];
+        let page = await client.calls.page({
+            startTime: startOfMonth,
+            endTime: endOfMonth,
+            limit: 50
+        });
+
+        calls = calls.concat(page.calls);
+
+        // Fetch more pages if available
+        while (page.nextPageUrl) {
+            page = await client.calls.page({
+                startTime: startOfMonth,
+                endTime: endOfMonth,
+                pageUrl: page.nextPageUrl
+            });
+            calls = calls.concat(page.calls);
+        }
+
         const callData = calls.map(call => ({
             sid: call.sid,
             to: call.to,
@@ -88,8 +114,8 @@ app.get('/call-history', async (req, res) => {
             dateUpdated: call.dateUpdated,
             price: call.price,
         }));
-        
-        res.json(callData);  // Send the call data as a JSON response
+
+        res.json(callData);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error fetching call history', error: error.message });
@@ -97,6 +123,6 @@ app.get('/call-history', async (req, res) => {
 });
 
 // 啟動伺服器
-app.listen(port, () => {
+app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
