@@ -76,48 +76,34 @@ app.post('/make-call', express.json(), async (req, res) => {
 // 截取撥打記錄
 app.get('/call-history', async (req, res) => {
     try {
-        const { month, year } = req.query;
+        const { month } = req.body;
+        let startOfMonth = new Date();
+        let endOfMonth = new Date();
 
-        const now = new Date();
-        const targetMonth = month ? parseInt(month) - 1 : now.getMonth();
-        const targetYear = year ? parseInt(year) : now.getFullYear();
+        startOfMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth(), 1).toISOString();
+        endOfMonth = new Date(endOfMonth.getFullYear(), endOfMonth.getMonth() + 1, 0).toISOString();
 
-        const startOfMonth = new Date(targetYear, targetMonth, 1).toISOString();
-        const endOfMonth = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59).toISOString();
-
-        let calls = [];
-        let page = await client.calls.page({
-            startTime: startOfMonth,
-            endTime: endOfMonth,
-            limit: 50
-        });
-
-        calls = calls.concat(page.calls);
-
-        // Fetch more pages if available
-        while (page.nextPageUrl) {
-            page = await client.calls.page({
-                startTime: startOfMonth,
-                endTime: endOfMonth,
-                pageUrl: page.nextPageUrl
-            });
-            calls = calls.concat(page.calls);
+        if (month) {
+            const [year, monthNumber] = month.split('-');
+            const start = new Date(year, monthNumber - 1, 1);
+            const end = new Date(year, monthNumber, 0);
+            startOfMonth = start.toISOString();
+            endOfMonth = end.toISOString();
         }
 
-        const callData = calls.map(call => ({
-            sid: call.sid,
-            to: call.to,
-            from: call.from,
-            status: call.status,
-            duration: call.duration,
-            dateCreated: call.dateCreated,
-            dateUpdated: call.dateUpdated,
-            price: call.price,
-        }));
+        const calls = await client.calls.list({
+            startTime: startOfMonth,
+            endTime: endOfMonth,
+            limit: 1000,
+        });
 
-        res.json(callData);
+        if (!calls || calls.length === 0) {
+            return res.status(404).json({ message: 'No call records found for this month' });
+        }
+
+        return res.json({ calls });
     } catch (error) {
-        console.error(error);
+        console.error('Error:', error);
         res.status(500).json({ message: 'Error fetching call history', error: error.message });
     }
 });
