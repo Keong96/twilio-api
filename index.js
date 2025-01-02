@@ -78,35 +78,14 @@ app.post('/make-call', express.json(), async (req, res) => {
 // 截取撥打記錄
 app.get('/call-history', async (req, res) => {
     try {
-        const { month } = req.body;
-        let startOfMonth = new Date();
-        let endOfMonth = new Date();
-
-        startOfMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth(), 1).toISOString();
-        endOfMonth = new Date(endOfMonth.getFullYear(), endOfMonth.getMonth() + 1, 0).toISOString();
-
-        if (month) {
-            const [year, monthNumber] = month.split('-');
-            const start = new Date(year, monthNumber - 1, 1);
-            const end = new Date(year, monthNumber, 0);
-            startOfMonth = start.toISOString();
-            endOfMonth = end.toISOString();
-        }
 
         const calls = await client.calls.list({
-            startTime: startOfMonth,
-            endTime: endOfMonth,
             limit: 1000,
         });
 
-        console.log('Start of Month:', startOfMonth);
-        console.log('End of Month:', endOfMonth);
-
         if (!calls || calls.length === 0) {
             return res.status(404).json({
-                startOfMonth: startOfMonth,
-                endOfMonth: endOfMonth,
-                message: 'No call records found for this month'
+                message: 'No call records found'
             });
         }
 
