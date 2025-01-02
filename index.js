@@ -78,18 +78,28 @@ app.post('/make-call', express.json(), async (req, res) => {
 // 截取撥打記錄
 app.get('/call-history', async (req, res) => {
     try {
+        const [outboundCalls, inboundCalls] = await Promise.all([
+            client.calls.list({
+                to: phoneNumber,
+            }),
+            client.calls.list({
+                from: phoneNumber,
+            }),
+        ]);
 
-        const calls = await client.calls.list({
-            limit: 1000,
-        });
+        const allCalls = [...outboundCalls, ...inboundCalls];
 
-        if (!calls || calls.length === 0) {
+        if (allCalls.length === 0) {
             return res.status(404).json({
-                message: 'No call records found'
+                message: `No call records found for ${phoneNumber} in the specified period.`,
             });
         }
 
-        return res.json({ calls });
+        return res.json({
+            message: `Call history for ${phoneNumber} fetched successfully.`,
+            data: allCalls,
+        });
+
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({ message: 'Error fetching call history', error: error.message });
