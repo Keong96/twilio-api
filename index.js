@@ -99,8 +99,15 @@ app.get('/call-history', async (req, res) => {
             limit: 1000,
         });
 
+        console.log('Start of Month:', startOfMonth);
+        console.log('End of Month:', endOfMonth);
+
         if (!calls || calls.length === 0) {
-            return res.status(404).json({ message: 'No call records found for this month' });
+            return res.status(404).json({
+                startOfMonth: startOfMonth,
+                endOfMonth: endOfMonth,
+                message: 'No call records found for this month'
+            });
         }
 
         return res.json({ calls });
