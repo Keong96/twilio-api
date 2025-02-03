@@ -1,22 +1,57 @@
 const express = require('express');
 const twilio = require('twilio');
+const jwt = require("jsonwebtoken");
+const bodyParser = require("body-parser");
+const { Client } = require('pg');
 require('dotenv').config();
-
+const VoiceResponse = require('twilio').twiml.VoiceResponse;
 const app = express();
 
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
-const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static('public'));
 
-const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
+const twilio_client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
+
+const config = {
+  connectionString: process.env.DB
+};
+
+const client = new Client(config);
+client.connect();
 
 app.get('/', (req, res) => {
   return res.send("OK");
 });
+
+function GenerateJWT(_userId, _email) {
+  return jwt.sign(
+    { userId: _userId, email: _email},
+    process.env.TOKEN_KEY,
+    { expiresIn: "24h" }
+  );
+}
+
+function verifyToken(req, res, next) {
+  const authHeader = req.headers["authorization"];
+
+  if (authHeader) {
+    const token = authHeader.split(" ")[1];
+    jwt.verify(token, process.env.TOKEN_KEY, (err, user) => {
+      if (err) {
+        return res.sendStatus(403);
+      }
+
+      req.user = user;
+      next();
+    });
+  } else {
+    res.sendStatus(401);
+  }
+}
 
 app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'login.html'));
@@ -27,18 +62,45 @@ app.get('/dashboard', (req, res) => {
 });
 
 // 登录
-app.post('/login', (req, res) => {
-    const { username, password } = req.body;
+app.post('/login', async (req, res) => {
+  if (typeof(req.body.email) === 'undefined' || typeof(req.body.password) === 'undefined') {
+    return res.status(200).json({
+      status: false,
+      data: {},
+      message: "Error: Please enter your email and password to login.",
+    });
+  }
 
-    if (username === adminCredentials.username && password === adminCredentials.password) {
-        return res.status(200).json({ success: true });
-    } else {
-        return res.status(401).json({ success: false, error: 'Invalid username or password' });
-    }
+  client.query("SELECT * FROM users WHERE email = $1 AND password = crypt($2, password)", [req.body.email, req.body.password])
+    .then((result) => {
+      if (result.rows.length > 0) {
+        const token = GenerateJWT(result.rows[0].id, result.rows[0].email);
+       
+        res.status(200).json({
+          status: true,
+          data: {
+            userId: result.rows[0].id,
+            token: token,
+          },
+          message: ""
+        });
+      } else {
+        return res.status(200).json({
+          status: false,
+          data: {},
+          message: "Error: Wrong email or Password",
+        });
+      }
+    })
+    .catch((e) => {
+      console.error(e.stack);
+      res.status(500).send(e.stack);
+    });
 });
 
-app.get('/phone-numbers', (req, res) => {
-  const phoneNumbers = process.env.TWILIO_PHONE_NUMBERS.split(',');
+app.get('/phone-numbers', verifyToken, async(req, res) => {
+  const result = await client.query('SELECT phone_number FROM phone_numbers WHERE user_id = $1', [req.user.userId]);
+  const phoneNumbers = result.rows.map(row => row.phone_number);
   return res.status(200).json(phoneNumbers);
 });
 
@@ -93,7 +155,7 @@ app.post('/make-call', express.json(), async (req, res) => {
     const to = req.body.to;
     
     try {
-        const call = await client.calls.create({
+        const call = await twilio_client.calls.create({
             url: 'https://twilio-api-t328.onrender.com/call',
             to,
             from: phoneNumber,
@@ -107,38 +169,47 @@ app.post('/make-call', express.json(), async (req, res) => {
 });
 
 // 截取撥打記錄
-app.get('/call-history/:phoneNumber', async (req, res) => {
+app.get('/call-history/:phoneNumber', verifyToken, async (req, res) => {
+
   const phoneNumber = req.params.phoneNumber;
-    try {
-        const [outboundCalls, inboundCalls] = await Promise.all([
-            client.calls.list({
-                to: phoneNumber,
-            }),
-            client.calls.list({
-                from: phoneNumber,
-            }),
-        ]);
+  const result = await client.query('SELECT * FROM phone_numbers WHERE user_id = $1 AND phone_number = $2', [req.user.userId, phoneNumber]);
+    
+  if (result.rows.length === 0) {
+    return res.status(403).json({
+      message: 'Unauthorized: Phone number does not belong to the user.',
+    });
+  }
 
-        const allCalls = [...outboundCalls, ...inboundCalls];
+  try {
+    const [outboundCalls, inboundCalls] = await Promise.all([
+      twilio_client.calls.list({
+        to: phoneNumber,
+      }),
+      twilio_client.calls.list({
+        from: phoneNumber,
+      }),
+    ]);
 
-        if (allCalls.length === 0) {
-            return res.status(404).json({
-                message: `No call records found for ${phoneNumber} in the specified period.`,
-            });
-        }
+    const allCalls = [...outboundCalls, ...inboundCalls];
 
-        return res.json({
-            message: `Call history for ${phoneNumber} fetched successfully.`,
-            data: allCalls,
-        });
-
-    } catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({ message: 'Error fetching call history', error: error.message });
+    if (allCalls.length === 0) {
+      return res.status(404).json({
+          message: `No call records found for ${phoneNumber} in the specified period.`,
+      });
     }
+
+    return res.json({
+      message: `Call history for ${phoneNumber} fetched successfully.`,
+      data: allCalls,
+    });
+
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: 'Error fetching call history', error: error.message });
+  }
 });
 
 // 啟動伺服器
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
