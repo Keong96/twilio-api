@@ -10,8 +10,37 @@ const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+app.use(express.static('public'));
 
 const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
+
+app.get('/', (req, res) => {
+  return res.send("OK");
+});
+
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+app.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
+
+// 登录
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+
+    if (username === adminCredentials.username && password === adminCredentials.password) {
+        return res.status(200).json({ success: true });
+    } else {
+        return res.status(401).json({ success: false, error: 'Invalid username or password' });
+    }
+});
+
+app.get('/phone-numbers', (req, res) => {
+  const phoneNumbers = process.env.TWILIO_PHONE_NUMBERS.split(',');
+  return res.status(200).json(phoneNumbers);
+});
 
 // 處理來電 Webhook
 app.post('/call', express.urlencoded({ extended: false }), (req, res) => {
@@ -19,7 +48,7 @@ app.post('/call', express.urlencoded({ extended: false }), (req, res) => {
 
     const gather = response.gather({
         numDigits: 1,
-        action: '/process-input',
+        action: 'https://twilio-api-t328.onrender.com/process-input',
         method: 'POST',
     });
 
@@ -60,12 +89,14 @@ app.post('/process-input', express.urlencoded({ extended: false }), (req, res) =
 
 // 測試撥打電話
 app.post('/make-call', express.json(), async (req, res) => {
+    const phoneNumber = req.body.phoneNumber;
+    const to = req.body.to;
+    
     try {
-        const { to } = req.body;
         const call = await client.calls.create({
             url: 'https://twilio-api-t328.onrender.com/call',
             to,
-            from: TWILIO_PHONE_NUMBER,
+            from: phoneNumber,
         });
 
         res.json({ message: 'Call initiated', callSid: call.sid });
@@ -76,7 +107,8 @@ app.post('/make-call', express.json(), async (req, res) => {
 });
 
 // 截取撥打記錄
-app.get('/call-history', async (req, res) => {
+app.get('/call-history/:phoneNumber', async (req, res) => {
+  const phoneNumber = req.params.phoneNumber;
     try {
         const [outboundCalls, inboundCalls] = await Promise.all([
             client.calls.list({

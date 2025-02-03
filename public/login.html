@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .login-container {
+      background: #fff;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+    .login-container h2 {
+      font-size: 24px;
+      margin-bottom: 30px;
+      text-align: center;
+      color: #333;
+    }
+    .form-control {
+      border-radius: 25px;
+      box-shadow: none;
+      padding: 20px;
+      font-size: 16px;
+      margin-bottom: 15px;
+    }
+    .btn-primary {
+      border-radius: 25px;
+      padding: 12px;
+      font-size: 18px;
+      background-color: #6f42c1;
+      border: none;
+      transition: background-color 0.3s ease;
+    }
+    .btn-primary:hover {
+      background-color: #5a31a1;
+    }
+    .error {
+      color: #ff6b6b;
+      font-size: 14px;
+      text-align: center;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 14px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <h2>Admin Login</h2>
+    <form id="login-form">
+      <div class="form-group">
+        <input type="text" class="form-control" id="username" placeholder="Username" required />
+      </div>
+      <div class="form-group">
+        <input type="password" class="form-control" id="password" placeholder="Password" required />
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Login</button>
+      <p class="error" id="error-message"></p>
+    </form>
+    <div class="footer">
+      <p>&copy; 2025 Your Company</p>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS and dependencies -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async function (event) {
+      event.preventDefault();
+
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      const response = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await response.json();
+      const errorMessage = document.getElementById('error-message');
+
+      if (data.success) {
+        window.location.href = 'https://twilio-api-t328.onrender.com/dashboard';
+      } else {
+        errorMessage.textContent = data.error || 'Login failed. Please try again.';
+      }
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <title>Dashboard</title>
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      display: flex;
+      width: 100%;
+      max-width: 1200px;
+      margin-top: 5%;
+      margin-bottom: 5%;
+    }
+
+    .sidebar {
+      width: 20%;
+      background: #ffffffc9;
+      color: #333;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+      margin-right: 20px;
+    }
+
+    .sidebar nav a {
+      display: block;
+      margin: 10px 0;
+      color: #764ba2;
+      text-decoration: none;
+      padding: 12px;
+      border-radius: 5px;
+      font-size: 16px;
+      transition: background-color 0.3s ease;
+    }
+
+    .sidebar nav a:hover {
+      background-color: #6f42c1;
+      color: #fff;
+    }
+
+    .main-content {
+      flex-grow: 1;
+      padding: 20px;
+      background: #ffffffc9;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+    }
+
+    .section {
+      padding: 30px 20px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .section h2 {
+      margin: 0 0 10px;
+      font-size: 24px;
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .form-control {
+      border-radius: 15px;
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 5px;
+      box-shadow: none;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #6f42c1, #a162d8);
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+      background: linear-gradient(135deg, #5a31a1, #8f5ab7);
+    }
+
+    .btn:active {
+      transform: scale(0.95);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    .table th,
+    .table td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+
+    .table th {
+      background: #6f42c1; /* Purple header */
+      color: #fff;
+    }
+
+    .table td {
+      background: #f4f4f9; /* Light gray for table rows */
+    }
+
+    /* Adding style for the refresh icon */
+    #refresh-icon {
+      margin-left: 10px;
+      font-size: 20px;
+      color: #6f42c1;
+      transition: transform 0.3s ease;
+    }
+
+    #refresh-icon:active {
+      color: #5a31a1;
+      transform: rotate(360deg);
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 14px;
+      color: #888;
+    }
+
+    input:disabled, .form-control:disabled {
+      background-color: #f0f0f0;  /* Light gray background */
+      color: #888;  /* Lighter text color */
+      border: 2px solid #ccc;  /* Lighter border */
+      opacity: 0.6;  /* Reduced opacity for a "disabled" feel */
+    }
+
+    button:disabled {
+      background-color: #dcdcdc;  /* Disabled button color */
+      color: #888;  /* Disabled button text color */
+      cursor: not-allowed;  /* Change the cursor to indicate it can't be clicked */
+    }
+
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="sidebar">
+      <h2>Sidebar</h2>
+      <nav>
+        <a href="#section1">Make a Call</a>
+      </nav>
+    </div>
+    
+    <div class="main-content">
+      <div id="section1" class="section">
+        <h2>Make a Call</h2>
+        <form id="make-call-form" style="display: flex; align-items: center;">
+            <div class="form-group" style="margin-right: 10px;">
+                <label for="phone-number">Select Phone:</label>
+                <select id="phone-number" class="form-control" style="width: 150px;"></select>
+            </div>
+            <div class="form-group" style="margin-right: 10px;">
+                <label for="call-to">Call To:</label>
+                <input type="text" id="call-to" class="form-control" placeholder="Enter phone number" required style="width: 200px;">
+            </div>
+            <button type="button" onclick="initiateCall()" class="btn">Call</button>
+        </form>
+        <p id="make-call-status"></p>
+    
+        <!-- Loading Spinner -->
+        <div id="loading-spinner" style="display:none;">Making the call...</div>
+    </div>
+  
+      <div id="dynamic-sections"></div>
+      </div>
+  </div>
+
+  <script>
+    let phoneNumbers = [];
+    const dynamicSection = document.getElementById("dynamic-sections"); 
+    const sidebarNav = document.querySelector(".sidebar nav");
+    const phoneDropdown = document.getElementById("phone-number");
+
+    document.addEventListener("DOMContentLoaded", async function () {
+    phoneNumbers = await fetchPhoneNumbers();
+
+    phoneNumbers.forEach(phone => {
+      const section = createPhoneSection(phone);
+      dynamicSection.appendChild(section);
+
+      const sidebarLink = document.createElement("a");
+      sidebarLink.href = `#${phone.replace(/\s+/g, "-")}`;
+      sidebarLink.textContent = phone;
+      sidebarNav.appendChild(sidebarLink);
+
+      const option = document.createElement("option");
+      option.value = phone; 
+      option.textContent = phone;
+      phoneDropdown.append(option);
+    });
+  });
+
+    async function fetchPhoneNumbers() {
+      try {
+        const response = await axios.get(`http://localhost:3000/phone-numbers`);
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching phone numbers:", error);
+        return [];
+      }
+    }
+    
+    function createPhoneSection(phone) {
+      let section = document.createElement("div");
+      section.classList.add("section");
+      section.id = `section-${phone}`;
+
+      section.innerHTML = `
+      <h2>${phone} Settings 
+        <i class="fa fa-refresh" id="refresh-icon" data-phone="${phone}" style="cursor: pointer;"></i>
+      </h2>
+
+      <!-- Redirection Setup -->
+      <div class="form-group">
+        <label for="phone-number-redirection">Redirect To:</label>
+        <div style="display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; margin-bottom: 10px;">
+            <input type="text" id="redirect1" class="btn" style="width: 10px; background:white; color:black; border:2px solid #ccc; box-shadow:none; margin-bottom:10px;" value="1" disabled>
+            &nbsp&nbsp
+            <input type="text" id="redirection-description1" class="form-control" value="聯繫客服" required style="text-align: center; width:100px" disabled>
+            &nbsp&nbsp
+            <input type="text" id="redirection-number1" class="form-control" placeholder="Enter phone number" required disabled>
+            &nbsp&nbsp
+            <button id="edit1" class="btn btn-info" style="margin-left: 10px;" onclick="editRedirect('section-${phone}', 1)">Edit</button>
+            <button id="save1" class="btn btn-success" style="margin-left: 10px; display: none;" onclick="saveRedirect('section-${phone}', 1)">Save</button>
+          </div>
+          <div style="display: flex; align-items: center; margin-bottom: 10px;">
+            <input type="text" id="redirect2" class="btn" style="width: 10px; background:white; color:black; border:2px solid #ccc; box-shadow:none; margin-bottom:10px;" value="2" disabled>
+            &nbsp&nbsp
+            <input type="text" id="redirection-description2" class="form-control" value="技術支持" required style="text-align: center; width:100px" disabled>
+            &nbsp&nbsp
+            <input type="text" id="redirection-number2" class="form-control" placeholder="Enter phone number" required disabled>
+            &nbsp&nbsp
+            <button id="edit2" class="btn btn-info" style="margin-left: 10px;" onclick="editRedirect('section-${phone}', 2)">Edit</button>
+            <button id="save2" class="btn btn-success" style="margin-left: 10px; display: none;" onclick="saveRedirect('section-${phone}', 2)">Save</button>
+          </div>
+          <div style="display: flex; align-items: center; margin-bottom: 10px;">
+            <input type="text" id="redirect3" class="btn" style="width: 10px; background:white; color:black; border:2px solid #ccc; box-shadow:none; margin-bottom:10px;" value="3" disabled>
+            &nbsp&nbsp
+            <input type="text" id="redirection-description3" class="form-control" value="其他服務" required style="text-align: center; width:100px" disabled>
+            &nbsp&nbsp
+            <input type="text" id="redirection-number3" class="form-control" placeholder="Enter phone number" required disabled>
+            &nbsp&nbsp
+            <button id="edit3" class="btn btn-info" style="margin-left: 10px;" onclick="editRedirect('section-${phone}', 3)">Edit</button>
+            <button id="save3" class="btn btn-success" style="margin-left: 10px; display: none;" onclick="saveRedirect('section-${phone}', 3)">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Call History Table -->
+      <div>
+        <h3>Call History for ${phone}</h3>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Call SID</th>
+              <th>From</th>
+              <th>To</th>
+              <th>Status</th>
+              <th>Duration (s)</th>
+              <th>DateTime</th>
+              <th>Direction</th>
+              <th>Cost</th>
+            </tr>
+          </thead>
+          <tbody class="call-history-table" data-phone="${phone}">
+            <tr><td colspan="8">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      `;
+
+      fetchCallHistory(phone);
+      return section;
+    }
+    
+    async function initiateCall() {
+      const phoneNumber = document.getElementById("phone-number").value;
+      const callTo = document.getElementById("call-to").value;
+      const statusElement = document.getElementById("make-call-status");
+      const loadingSpinner = document.getElementById("loading-spinner");
+
+      // Show the loading spinner and hide the status text
+      loadingSpinner.style.display = "block";
+      statusElement.innerText = "";
+
+      // Make API call to initiate the call
+      const response = await axios.post(`http://localhost:3000/make-call`, {
+        phoneNumber: phoneNumber,
+        to: callTo
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        loadingSpinner.style.display = "none";
+        if (data.callSid)
+          statusElement.innerText = `Call initiated successfully. Call SID: ${data.callSid}`;
+        else
+          statusElement.innerText = "Call initiated, but no Call SID received.";
+      })
+      .catch(error => {
+        loadingSpinner.style.display = "none";
+        statusElement.innerText = `Error: ${error.message}`;
+      });
+    }
+
+    function fetchCallHistory(number)
+    {
+      axios.get(`http://localhost:3000/call-history/${number}`)
+      .then(response => {
+        const callHistoryTable = document.querySelector('.call-history-table');
+        callHistoryTable.innerHTML = ''; // Clear "Loading..." message
+
+        // Check if the data contains any calls
+        if (response.data && response.data.data && response.data.data.length > 0) {
+          response.data.data.forEach(call => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${call.sid}</td>
+              <td>${call.from}</td>
+              <td>${call.to}</td>
+              <td>${call.status}</td>
+              <td>${call.duration}</td>
+              <td>${new Date(call.startTime).toLocaleString()}</td>
+              <td>${call.direction}</td>
+              <td>${call.price || 'N/A'}</td>
+            `;
+            callHistoryTable.appendChild(row);
+          });
+        } else {
+          const noDataRow = document.createElement('tr');
+          noDataRow.innerHTML = '<td colspan="8">No call records found.</td>';
+          callHistoryTable.appendChild(noDataRow);
+        }
+      });
+    }
+
+    function editRedirect(sectionId, number) {
+      const section = document.getElementById(sectionId);
+      const redirectInput = section.querySelector(`#redirect${number}`);
+      const descriptionInput = section.querySelector(`#redirection-description${number}`);
+      const phoneNumberInput = section.querySelector(`#redirection-number${number}`);
+      const editButton = section.querySelector(`#edit${number}`);
+      const saveButton = section.querySelector(`#save${number}`);
+      
+      // Enable all inputs
+      redirectInput.disabled = false;
+      descriptionInput.disabled = false;
+      phoneNumberInput.disabled = false;
+      
+      // Show the save button and hide the edit button
+      editButton.style.display = 'none';
+      saveButton.style.display = 'inline-block';
+    }
+
+    function saveRedirect(sectionId, number) {
+      const section = document.getElementById(sectionId);
+      const redirectInput = section.querySelector(`#redirect${number}`);
+      const descriptionInput = section.querySelector(`#redirection-description${number}`);
+      const phoneNumberInput = section.querySelector(`#redirection-number${number}`);
+      const editButton = section.querySelector(`#edit${number}`);
+      const saveButton = section.querySelector(`#save${number}`);
+
+      if (!/^[0-9]$/.test(redirectInput.value)) {
+        alert("Redirect number must be a single digit (0-9).");
+        redirectInput.value = "";
+        redirectInput.focus();
+        return;
+      }
+
+      // Disable all inputs again
+      redirectInput.disabled = true;
+      descriptionInput.disabled = true;
+      phoneNumberInput.disabled = true;
+
+      // Hide the save button and show the edit button again
+      saveButton.style.display = 'none';
+      editButton.style.display = 'inline-block';
+    }
+
+  </script>
+</body>
+</html>
