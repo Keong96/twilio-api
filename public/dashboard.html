@@ -207,6 +207,7 @@
   </div>
 
   <script>
+    const token = localStorage.getItem("token");
     let phoneNumbers = [];
     const dynamicSection = document.getElementById("dynamic-sections"); 
     const sidebarNav = document.querySelector(".sidebar nav");
@@ -233,13 +234,12 @@
 
     async function fetchPhoneNumbers() {
       try {
-        const token = localStorage.getItem("token"); // Retrieve token from localStorage
         const response = await axios.get(`https://twilio-api-t328.onrender.com/phone-numbers`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
-        
+
         return response.data;
       } catch (error) {
         console.error("Error fetching phone numbers:", error);
@@ -356,7 +356,11 @@
 
     function fetchCallHistory(number)
     {
-      axios.get(`https://twilio-api-t328.onrender.com/call-history/${number}`)
+      axios.get(`https://twilio-api-t328.onrender.com/call-history/${number}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
       .then(response => {
         const callHistoryTable = document.querySelector('.call-history-table');
         callHistoryTable.innerHTML = ''; // Clear "Loading..." message
