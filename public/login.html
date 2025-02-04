@@ -96,16 +96,20 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
-      });
-
-      const data = await response.json();
-      const errorMessage = document.getElementById('error-message');
-
-      if (data.success) {
-        window.location.href = 'https://twilio-api-t328.onrender.com/dashboard';
-      } else {
-        errorMessage.textContent = data.error || 'Login failed. Please try again.';
+      })
+      .then(result)
+      {
+        if (result.data.status) {
+          localStorage.setItem("token", result.data.data.token)
+          window.location.href = 'https://twilio-api-t328.onrender.com/dashboard.html';
+        } else {
+          const errorMessage = document.getElementById('error-message');
+          errorMessage.textContent = result.data.message || 'Login failed. Please try again.';
+        }
       }
+      
+
+      
     });
   </script>
 
