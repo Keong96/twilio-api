@@ -172,6 +172,8 @@ app.post('/make-call', express.json(), async (req, res) => {
 app.get('/call-history/:phoneNumber', verifyToken, async (req, res) => {
 
   const phoneNumber = req.params.phoneNumber;
+  console.log(phoneNumber);
+  console.log(typeof(phoneNumber));
   const result = await client.query('SELECT * FROM phone_numbers WHERE user_id = $1 AND phone_number = $2', [req.user.userId, phoneNumber]);
     
   if (result.rows.length === 0) {
