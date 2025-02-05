@@ -172,12 +172,11 @@ app.post('/make-call', express.json(), async (req, res) => {
 app.get('/call-history/:phoneNumber', verifyToken, async (req, res) => {
 
   const phoneNumber = req.params.phoneNumber;
-  console.log(phoneNumber);
-  console.log(typeof(phoneNumber));
   const result = await client.query('SELECT * FROM phone_numbers WHERE user_id = $1 AND phone_number = $2', [req.user.userId, phoneNumber]);
     
   if (result.rows.length === 0) {
-    return res.status(403).json({
+    return res.status(200).json({
+      status: false,
       message: 'Unauthorized: Phone number does not belong to the user.',
     });
   }
@@ -195,12 +194,14 @@ app.get('/call-history/:phoneNumber', verifyToken, async (req, res) => {
     const allCalls = [...outboundCalls, ...inboundCalls];
 
     if (allCalls.length === 0) {
-      return res.status(404).json({
-          message: `No call records found for ${phoneNumber} in the specified period.`,
+      return res.status(200).json({
+        status: true,
+        message: `No call records found for ${phoneNumber} in the specified period.`,
       });
     }
 
     return res.json({
+      status: true,
       message: `Call history for ${phoneNumber} fetched successfully.`,
       data: allCalls,
     });
