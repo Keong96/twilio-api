@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
   <title>Dashboard</title>
   <style>
     body {
@@ -176,6 +177,10 @@
 <body>
   <div class="container">
     <div class="sidebar">
+      <div class="user-info">
+        <p id="username-display"></p>
+        <a href="/change-password.html" class="btn">Change Password</a>
+      </div>
       <h2>Sidebar</h2>
       <nav>
         <a href="#section1">Make a Call</a>
@@ -208,6 +213,11 @@
 
   <script>
     const token = localStorage.getItem("token");
+    const decoded_token = jwt_decode(token);
+
+    const username = decoded_token.email.split("@")[0];
+    document.getElementById("username-display").textContent = `Hello, ${username}`;
+
     let phoneNumbers = [];
     const dynamicSection = document.getElementById("dynamic-sections"); 
     const sidebarNav = document.querySelector(".sidebar nav");
@@ -230,6 +240,12 @@
       option.textContent = phone;
       phoneDropdown.append(option);
     });
+
+
+    const logoutLink = document.createElement("a");
+    logoutLink.href = `#Logout`;
+    logoutLink.textContent = "Logout";
+    sidebarNav.appendChild(logoutLink);
   });
 
     async function fetchPhoneNumbers() {
@@ -363,10 +379,10 @@
       })
       .then(response => {
         const callHistoryTable = document.querySelector('.call-history-table');
-        callHistoryTable.innerHTML = ''; // Clear "Loading..." message
+        callHistoryTable.innerHTML = '';
 
         // Check if the data contains any calls
-        if (response.data && response.data.data && response.data.data.length > 0) {
+        if (response.data.status && response.data.data && response.data.data.length > 0) {
           response.data.data.forEach(call => {
             const row = document.createElement('tr');
             row.innerHTML = `
