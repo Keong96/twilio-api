@@ -243,10 +243,16 @@
 
 
     const logoutLink = document.createElement("a");
-    logoutLink.class = "btn";
-    logoutLink.href = `#Logout`;
+    logoutLink.className = "btn";
+    logoutLink.href = "#Logout";
     logoutLink.textContent = "Logout";
-    logoutLink.style ="background:red, color:white, text-align:center";
+    logoutLink.style.background = "red";
+    logoutLink.style.color = "white";
+    logoutLink.style.textAlign = "center";
+    logoutLink.style.padding = "10px";
+    logoutLink.style.display = "block";
+    logoutLink.style.marginTop = "10px";
+
     sidebarNav.appendChild(logoutLink);
   });
 
