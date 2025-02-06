@@ -456,6 +456,10 @@
       editButton.style.display = 'inline-block';
     }
 
+    function logout() {
+      localStorage.removeItem("token");
+      window.location.href = "https://twilio-api-t328.onrender.com/login.html";
+    }
   </script>
 </body>
 </html>
