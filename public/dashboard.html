@@ -179,7 +179,7 @@
     <div class="sidebar">
       <div class="user-info">
         <p id="username-display"></p>
-        <a href="/change-password.html">Change Password</a>
+        <a href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</a>
       </div>
       <h2>Sidebar</h2>
       <nav>
@@ -207,8 +207,34 @@
         <div id="loading-spinner" style="display:none;">Making the call...</div>
     </div>
   
-      <div id="dynamic-sections"></div>
+    <div id="dynamic-sections"></div>
+    </div>
+
+    <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="changePasswordLabel">Change Password</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <label for="oldPassword" class="form-label">Old Password:</label>
+            <input type="password" class="form-control" id="oldPassword" required>
+
+            <label for="newPassword" class="form-label">New Password:</label>
+            <input type="password" class="form-control" id="newPassword" required>
+
+            <label for="confirmNewPassword" class="form-label">Re-enter New Password:</label>
+            <input type="password" class="form-control" id="confirmNewPassword" required>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" onclick="submitChangePassword()">Submit</button>
+          </div>
+        </div>
       </div>
+    </div>
+
   </div>
 
   <script>
@@ -463,6 +489,40 @@
       localStorage.removeItem("token");
       window.location.href = "https://twilio-api-t328.onrender.com/login.html";
     }
+    
+    async function submitChangePassword() {
+      const oldPassword = document.getElementById("oldPassword").value;
+      const newPassword = document.getElementById("newPassword").value;
+      const confirmNewPassword = document.getElementById("confirmNewPassword").value;
+
+      if (newPassword !== confirmNewPassword) {
+        alert("New passwords do not match!");
+        return;
+      }
+
+      const token = localStorage.getItem("token");
+
+      try {
+        const response = await axios.post("https://twilio-api-t328.onrender.com/change-password", 
+        {
+          oldPassword,
+          newPassword
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        alert(response.data.message);
+        if (response.data.status) {
+          // Close Bootstrap modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById("changePasswordModal"));
+          modal.hide();
+        }
+      } catch (error) {
+        alert("Error: " + (error.response?.data?.message || "Something went wrong"));
+      }
+    }
+
   </script>
 </body>
 </html>
