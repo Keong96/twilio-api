@@ -179,7 +179,7 @@
     <div class="sidebar">
       <div class="user-info">
         <p id="username-display"></p>
-        <a href="/change-password.html" class="btn">Change Password</a>
+        <a href="/change-password.html">Change Password</a>
       </div>
       <h2>Sidebar</h2>
       <nav>
@@ -243,8 +243,10 @@
 
 
     const logoutLink = document.createElement("a");
+    logoutLink.class = "btn";
     logoutLink.href = `#Logout`;
     logoutLink.textContent = "Logout";
+    logoutLink.style ="background:red, color:white, text-align:center";
     sidebarNav.appendChild(logoutLink);
   });
 
