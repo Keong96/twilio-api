@@ -254,7 +254,7 @@
     logoutLink.style.marginTop = "10px";
 
     logoutLink.onclick = logout;
-    
+
     sidebarNav.appendChild(logoutLink);
   });
 
@@ -392,6 +392,7 @@
         callHistoryTable.innerHTML = '';
 
         // Check if the data contains any calls
+        console.log(response.data.data.length);
         if (response.data.status && response.data.data && response.data.data.length > 0) {
           response.data.data.forEach(call => {
             const row = document.createElement('tr');
