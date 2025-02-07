@@ -529,7 +529,6 @@
 
         alert(response.data.message);
         if (response.data.status) {
-          // Close Bootstrap modal
           const modal = bootstrap.Modal.getInstance(document.getElementById("changePasswordModal"));
           modal.hide();
         }

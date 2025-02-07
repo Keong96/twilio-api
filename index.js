@@ -214,7 +214,7 @@ app.get('/call-history/:phoneNumber', verifyToken, async (req, res) => {
 
 app.post('/change-password', verifyToken, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
-  const userId = req.user.userid;
+  const userId = req.user.userId;
 
   if (!oldPassword || !newPassword) {
     return res.status(200).json({ status: false, message: "All fields are required." });
