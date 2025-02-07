@@ -246,7 +246,6 @@
     {
       window.stop();
       window.location.href = `${window.location.origin}/login.html`;
-      return;
     }
 
     const decoded_token = jwt_decode(token);
@@ -255,7 +254,6 @@
       window.stop();
       localStorage.removeItem("token");
       window.location.href = `${window.location.origin}/login.html`;
-      return;
     }
 
     const username = decoded_token.email.split("@")[0];
