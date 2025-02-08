@@ -114,10 +114,7 @@ app.post('/call', express.urlencoded({ extended: false }), (req, res) => {
         method: 'POST',
     });
 
-    gather.say('歡迎致電，請按 1 聯繫客服，按 2 聯繫技術支持，按 3 查詢其他服務。');
-
-    response.say('感謝您的來電，再見。');
-    response.hangup();
+    gather.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' }, '欢迎致电，请按 1 联系客服，按 2 联系技术支持，按 3 查询其他服务。');
 
     res.type('text/xml');
     res.send(response.toString());
