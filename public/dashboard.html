@@ -367,7 +367,7 @@
         <table class="table">
           <thead>
             <tr>
-              <th>Call SID</th>
+              <th style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Call SID</th>
               <th>From</th>
               <th>To</th>
               <th>Status</th>
@@ -433,19 +433,23 @@
         callHistoryTable.innerHTML = '';
 
         // Check if the data contains any calls
-        console.log(response.data.data.length);
+
         if (response.data.status && response.data.data && response.data.data.length > 0) {
           response.data.data.forEach(call => {
+
+            const durationInMinutes = Math.ceil(call.duration / 60);
+            const callCost = 0.06 + (durationInMinutes * 0.06);
+
             const row = document.createElement('tr');
             row.innerHTML = `
-              <td>${call.sid}</td>
+              <td style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${callSid}</td>
               <td>${call.from}</td>
               <td>${call.to}</td>
               <td>${call.status}</td>
               <td>${call.duration}</td>
               <td>${new Date(call.startTime).toLocaleString()}</td>
               <td>${call.direction}</td>
-              <td>${call.price || 'N/A'}</td>
+              <td>$${callCost.toFixed(2)}</td>
             `;
             callHistoryTable.appendChild(row);
           });
