@@ -431,7 +431,7 @@
         }
       })
       .then(response => {
-        const callHistoryTable = document.querySelector(`.call-history-table[data-phone="${phone}"]`);
+        const callHistoryTable = document.querySelector(`.call-history-table[data-phone="${number}"]`);
         callHistoryTable.innerHTML = '';
 
         // Check if the data contains any calls
