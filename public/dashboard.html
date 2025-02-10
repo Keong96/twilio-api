@@ -425,12 +425,14 @@
 
     function fetchCallHistory(number)
     {
+      console.log(number);
       axios.get(`https://twilio-api-t328.onrender.com/call-history/${number}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       })
       .then(response => {
+        console.log(JSON.stringify(response.data));
         const callHistoryTable = document.querySelector('.call-history-table');
         callHistoryTable.innerHTML = '';
 
