@@ -168,6 +168,8 @@ app.post('/make-call', express.json(), async (req, res) => {
 // 截取撥打記錄
 app.get('/call-history/:phoneNumber', verifyToken, async (req, res) => {
 
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
   const phoneNumber = req.params.phoneNumber;
   const result = await client.query('SELECT * FROM phone_numbers WHERE user_id = $1 AND phone_number = $2', [req.user.userId, phoneNumber]);
     
@@ -197,10 +199,21 @@ app.get('/call-history/:phoneNumber', verifyToken, async (req, res) => {
       });
     }
 
+    allCalls.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+    const totalCalls = allCalls.length;
+    const totalPages = Math.ceil(totalCalls / limit);
+    const paginatedCalls = allCalls.slice((page - 1) * limit, page * limit);
+
     return res.json({
       status: true,
       message: `Call history for ${phoneNumber} fetched successfully.`,
-      data: allCalls,
+      data: paginatedCalls,
+      pagination: {
+        totalCalls,
+        totalPages,
+        currentPage: page,
+        limit,
+      },
     });
 
   } catch (error) {

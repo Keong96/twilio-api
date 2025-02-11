@@ -383,6 +383,14 @@
             <tr><td colspan="8">Loading...</td></tr>
           </tbody>
         </table>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-container" data-phone="${phone}" style="display: flex; justify-content: center; margin-top: 10px;">
+          <button class="btn btn-secondary prev-page" data-phone="${phone}" disabled>Previous</button>
+          <span class="page-info" data-phone="${phone}">Page 1</span>
+          <button class="btn btn-secondary next-page" data-phone="${phone}">Next</button>
+        </div>
+
       </div>
       `;
 
@@ -400,31 +408,33 @@
       loadingSpinner.style.display = "block";
       statusElement.innerText = "";
 
-      // Make API call to initiate the call
-      const response = await axios.post(`https://twilio-api-t328.onrender.com/make-call`, {
-        phoneNumber: phoneNumber,
-        to: callTo
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      })
-      .then(data => {
+      try {
+        // Make API call to initiate the call
+        const response = await axios.post(`https://twilio-api-t328.onrender.com/make-call`, {
+          phoneNumber: phoneNumber,
+          to: callTo
+        }, {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
         loadingSpinner.style.display = "none";
-        if (data.callSid)
-          statusElement.innerText = `Call initiated successfully. Call SID: ${data.callSid}`;
-        else
+        if (response.data.callSid) {
+          statusElement.innerText = `Call initiated successfully. Call SID: ${response.data.callSid}`;
+        } else {
           statusElement.innerText = "Call initiated, but no Call SID received.";
-      })
-      .catch(error => {
+        }
+      } catch (error) {
+        // Handle errors properly
         loadingSpinner.style.display = "none";
-        statusElement.innerText = `Error: ${error.message}`;
-      });
+        statusElement.innerText = `Error: ${error.response?.data?.message || error.message}`;
+      }
     }
 
-    function fetchCallHistory(number)
+    function fetchCallHistory(number, page = 1, limit = 10)
     {
-      axios.get(`https://twilio-api-t328.onrender.com/call-history/${number}`, {
+      axios.get(`https://twilio-api-t328.onrender.com/call-history/${number}?page=${page}&limit=${limit}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -433,11 +443,8 @@
         const callHistoryTable = document.querySelector(`.call-history-table[data-phone="${number}"]`);
         callHistoryTable.innerHTML = '';
 
-        // Check if the data contains any calls
-
         if (response.data.status && response.data.data && response.data.data.length > 0) {
           response.data.data.forEach(call => {
-
             const durationInMinutes = Math.ceil(call.duration / 60);
             const callCost = 0.06 + (durationInMinutes * 0.06);
 
@@ -459,6 +466,20 @@
           noDataRow.innerHTML = '<td colspan="8">No call records found.</td>';
           callHistoryTable.appendChild(noDataRow);
         }
+
+        // Handle pagination
+        const totalPages = response.data.totalPages || 1;
+        const pageInfo = document.querySelector(`.page-info[data-phone="${number}"]`);
+        pageInfo.textContent = `Page ${page} of ${totalPages}`;
+
+        const prevButton = document.querySelector(`.prev-page[data-phone="${number}"]`);
+        const nextButton = document.querySelector(`.next-page[data-phone="${number}"]`);
+
+        prevButton.disabled = page <= 1;
+        nextButton.disabled = page >= totalPages;
+
+        prevButton.onclick = () => fetchCallHistory(number, page - 1, pageSize);
+        nextButton.onclick = () => fetchCallHistory(number, page + 1, pageSize);
       });
     }
 
