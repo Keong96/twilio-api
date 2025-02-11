@@ -411,8 +411,8 @@
       })
       .then(data => {
         loadingSpinner.style.display = "none";
-        if (response.data.callSid)
-          statusElement.innerText = `Call initiated successfully. Call SID: ${response.data.callSid}`;
+        if (data.callSid)
+          statusElement.innerText = `Call initiated successfully. Call SID: ${data.callSid}`;
         else
           statusElement.innerText = "Call initiated, but no Call SID received.";
       })
