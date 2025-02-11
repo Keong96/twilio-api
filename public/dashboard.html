@@ -478,7 +478,7 @@
           // Handle pagination
           const paginatorContainer = document.querySelector(`.paginator[data-phone="${number}"]`);
           paginatorContainer.innerHTML = '';
-          
+          console.log("response.data.totalPages = "+response.data.totalPages);
           for (let i = 1; i <= response.data.totalPages; i++) {
             const pageBtn = document.createElement('button');
             pageBtn.innerText = i;
