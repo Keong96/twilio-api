@@ -173,7 +173,24 @@
       cursor: not-allowed;  /* Change the cursor to indicate it can't be clicked */
     }
 
+    .page-btn {
+      margin: 2px;
+      padding: 5px 10px;
+      border: 1px solid #ccc;
+      background: white;
+      cursor: pointer;
+    }
 
+    .page-btn.active {
+      background: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+
+    .page-btn:hover {
+      background: #0056b3;
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -385,11 +402,7 @@
         </table>
 
         <!-- Pagination Controls -->
-        <div class="pagination-container" data-phone="${phone}" style="display: flex; justify-content: center; margin-top: 10px;">
-          <button class="btn btn-secondary prev-page" data-phone="${phone}" disabled>Previous</button>
-          <span class="page-info" data-phone="${phone}">Page 1</span>
-          <button class="btn btn-secondary next-page" data-phone="${phone}">Next</button>
-        </div>
+        <div class="paginator" data-phone="${phone}" style="margin-top: 10px; text-align: center;"></div>
 
       </div>
       `;
@@ -461,25 +474,21 @@
             `;
             callHistoryTable.appendChild(row);
           });
+
+          // Handle pagination
+          for (let i = 1; i <= totalPages; i++) {
+            const pageBtn = document.createElement('button');
+            pageBtn.innerText = i;
+            pageBtn.className = `page-btn ${i === page ? 'active' : ''}`;
+            pageBtn.onclick = () => fetchCallHistory(number, i, pageSize);
+            paginatorContainer.appendChild(pageBtn);
+          }
+          
         } else {
           const noDataRow = document.createElement('tr');
           noDataRow.innerHTML = '<td colspan="8">No call records found.</td>';
           callHistoryTable.appendChild(noDataRow);
         }
-
-        // Handle pagination
-        const totalPages = response.data.totalPages || 1;
-        const pageInfo = document.querySelector(`.page-info[data-phone="${number}"]`);
-        pageInfo.textContent = `Page ${page} of ${totalPages}`;
-
-        const prevButton = document.querySelector(`.prev-page[data-phone="${number}"]`);
-        const nextButton = document.querySelector(`.next-page[data-phone="${number}"]`);
-
-        prevButton.disabled = page <= 1;
-        nextButton.disabled = page >= totalPages;
-
-        prevButton.onclick = () => fetchCallHistory(number, page - 1, pageSize);
-        nextButton.onclick = () => fetchCallHistory(number, page + 1, pageSize);
       });
     }
 
