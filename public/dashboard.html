@@ -409,11 +409,10 @@
           'Content-Type': 'application/json',
         }
       })
-      .then(response => response.json())
       .then(data => {
         loadingSpinner.style.display = "none";
-        if (data.callSid)
-          statusElement.innerText = `Call initiated successfully. Call SID: ${data.callSid}`;
+        if (response.data.callSid)
+          statusElement.innerText = `Call initiated successfully. Call SID: ${response.data.callSid}`;
         else
           statusElement.innerText = "Call initiated, but no Call SID received.";
       })
