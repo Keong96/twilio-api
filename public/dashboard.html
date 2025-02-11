@@ -476,6 +476,9 @@
           });
 
           // Handle pagination
+          const paginatorContainer = document.querySelector(`.paginator[data-phone="${number}"]`);
+          paginatorContainer.innerHTML = '';
+          
           for (let i = 1; i <= response.data.totalPages; i++) {
             const pageBtn = document.createElement('button');
             pageBtn.innerText = i;
