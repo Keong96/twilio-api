@@ -483,7 +483,7 @@
             const pageBtn = document.createElement('button');
             pageBtn.innerText = i;
             pageBtn.className = `page-btn ${i === page ? 'active' : ''}`;
-            pageBtn.onclick = () => fetchCallHistory(number, i, pageSize);
+            pageBtn.onclick = () => fetchCallHistory(number, i);
             paginatorContainer.appendChild(pageBtn);
           }
           
