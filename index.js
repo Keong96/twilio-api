@@ -105,16 +105,33 @@ app.get('/phone-numbers', verifyToken, async(req, res) => {
 });
 
 // 處理來電 Webhook
-app.post('/call', express.urlencoded({ extended: false }), (req, res) => {
+app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
     const response = new twilio.twiml.VoiceResponse();
 
-    const gather = response.gather({
-        numDigits: 1,
-        action: 'https://twilio-api-t328.onrender.com/process-input',
-        method: 'POST',
+    const isInbound = req.body.Direction === 'inbound';
+    const lookupNumber = isInbound ? req.body.To : req.body.From;
+
+    const ivrSettings = await getPhoneSettings(lookupNumber);
+
+    if (ivrSettings.length === 0) {
+      response.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' }, '当前没有可用的选项，请稍后再试。');
+      response.hangup();
+      res.type('text/xml').send(response.toString());
+      return;
+    }
+
+    let ivrMenuText = '欢迎致电，';
+    ivrSettings.forEach(setting => {
+      ivrMenuText += `按 ${setting.digit} ${setting.response_text}，`;
     });
 
-    gather.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' }, '欢迎致电，请按 1 联系客服，按 2 联系技术支持，按 3 查询其他服务。');
+    const gather = response.gather({
+      numDigits: 1,
+      action: 'https://twilio-api-t328.onrender.com/process-input',
+      method: 'POST',
+    });
+
+    gather.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' }, ivrMenuText);
 
     res.type('text/xml');
     res.send(response.toString());
@@ -164,6 +181,35 @@ app.post('/make-call', express.json(), async (req, res) => {
         res.status(500).json({ message: 'Error initiating call', error: error.message });
     }
 });
+
+// 截取号码设置
+app.get('/phone-setting/:phoneNumber', verifyToken, async (req, res) => {
+
+  const phoneNumber = req.params.phoneNumber;
+  const result = await client.query('SELECT * FROM phone_settings WHERE phone_number = $1', [phoneNumber]);
+  return res.status(200).json(result.rows);
+});
+
+// 更新号码设置
+app.post('/phone-setting/:phoneNumber', verifyToken, async (req, res) => {
+  const phoneNumber = req.params.phoneNumber;
+  const { digit, content, redirect_to } = req.body;
+
+  await client.query(
+    `INSERT INTO phone_settings (phone_number, digit, content, redirect_to)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (phone_number, digit) 
+     DO UPDATE SET content = EXCLUDED.content, redirect_to = EXCLUDED.redirect_to`,
+    [phoneNumber, digit, content, redirect_to]
+  );
+
+  res.status(200).json({ message: "Phone setting saved successfully" });
+});
+
+async function getPhoneSettings(phoneNumber) {
+  const result = await client.query('SELECT * FROM phone_settings WHERE phone_number = $1 ORDER BY digit ASC', [phoneNumber]);
+  return result.rows;
+}
 
 // 截取撥打記錄
 app.get('/call-history/:phoneNumber', verifyToken, async (req, res) => {
