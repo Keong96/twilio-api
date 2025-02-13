@@ -344,7 +344,7 @@
 
         <!-- Redirection Setup -->
         <div class="form-group">
-          <label for="phone-number-redirection">Redirect To:</label>
+          <label for="phone-number-redirection">Redirect To:</label>3
           <div id="redirection-container-${phone}" style="display: flex; flex-direction: column;">
             <p>Loading...</p>
           </div>
@@ -376,7 +376,7 @@
         </div>
       `;
 
-      document.body.appendChild(section);
+      dynamicSection.appendChild(section); 
 
       fetchPhoneSetting(phone);
       fetchCallHistory(phone);
