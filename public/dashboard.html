@@ -383,7 +383,11 @@
     }
     
     function fetchPhoneSetting(phone) {
-      axios.get(`https://twilio-api-t328.onrender.com/phone-setting/${phone}`)
+      axios.get(`https://twilio-api-t328.onrender.com/phone-setting/${phone}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
         .then(response => {
           const settings = response.data;
           const section = document.getElementById(`section-${phone}`);
