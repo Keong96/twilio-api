@@ -301,6 +301,7 @@
       phoneDropdown.append(option);
     });
 
+
     const logoutLink = document.createElement("a");
     logoutLink.className = "btn";
     logoutLink.href = "#Logout";
@@ -332,92 +333,84 @@
       }
     }
     
-    async function createPhoneSection(phone) {
+    function createPhoneSection(phone) {
       let section = document.createElement("div");
       section.classList.add("section");
       section.id = `section-${phone}`;
 
       section.innerHTML = `
-        <h2>${phone} Settings 
-          <i class="fa fa-refresh" id="refresh-icon" data-phone="${phone}" style="cursor: pointer;"></i>
-        </h2>
+      <h2>${phone} Settings 
+        <i class="fa fa-refresh" id="refresh-icon" data-phone="${phone}" style="cursor: pointer;"></i>
+      </h2>
 
-        <!-- Redirection Setup -->
-        <div class="form-group">
-          <label for="phone-number-redirection">Redirect To:</label>
-          <div id="redirection-container-${phone}" style="display: flex; flex-direction: column;">
-            <p>Loading...</p>
+      <!-- Redirection Setup -->
+      <div class="form-group">
+        <label for="phone-number-redirection">Redirect To:</label>
+        <div style="display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; margin-bottom: 10px;">
+            <input type="text" id="redirect1" class="btn" style="width: 50px; background:white; color:black; border:2px solid #ccc; box-shadow:none; margin-bottom:10px;" value="1" disabled>
+            &nbsp&nbsp
+            <input type="text" id="redirection-description1" class="form-control" value="聯繫客服" required style="text-align: center; width:100px" disabled>
+            &nbsp&nbsp
+            <input type="text" id="redirection-number1" class="form-control" placeholder="Enter phone number" required disabled>
+            &nbsp&nbsp
+            <button id="edit1" class="btn btn-info" style="margin-left: 10px;" onclick="editRedirect('section-${phone}', 1)">Edit</button>
+            <button id="save1" class="btn btn-success" style="margin-left: 10px; display: none;" onclick="saveRedirect('section-${phone}', 1)">Save</button>
+          </div>
+          <div style="display: flex; align-items: center; margin-bottom: 10px;">
+            <input type="text" id="redirect2" class="btn" style="width: 50px; background:white; color:black; border:2px solid #ccc; box-shadow:none; margin-bottom:10px;" value="2" disabled>
+            &nbsp&nbsp
+            <input type="text" id="redirection-description2" class="form-control" value="技術支持" required style="text-align: center; width:100px" disabled>
+            &nbsp&nbsp
+            <input type="text" id="redirection-number2" class="form-control" placeholder="Enter phone number" required disabled>
+            &nbsp&nbsp
+            <button id="edit2" class="btn btn-info" style="margin-left: 10px;" onclick="editRedirect('section-${phone}', 2)">Edit</button>
+            <button id="save2" class="btn btn-success" style="margin-left: 10px; display: none;" onclick="saveRedirect('section-${phone}', 2)">Save</button>
+          </div>
+          <div style="display: flex; align-items: center; margin-bottom: 10px;">
+            <input type="text" id="redirect3" class="btn" style="width: 50px; background:white; color:black; border:2px solid #ccc; box-shadow:none; margin-bottom:10px;" value="3" disabled>
+            &nbsp&nbsp
+            <input type="text" id="redirection-description3" class="form-control" value="其他服務" required style="text-align: center; width:100px" disabled>
+            &nbsp&nbsp
+            <input type="text" id="redirection-number3" class="form-control" placeholder="Enter phone number" required disabled>
+            &nbsp&nbsp
+            <button id="edit3" class="btn btn-info" style="margin-left: 10px;" onclick="editRedirect('section-${phone}', 3)">Edit</button>
+            <button id="save3" class="btn btn-success" style="margin-left: 10px; display: none;" onclick="saveRedirect('section-${phone}', 3)">Save</button>
           </div>
         </div>
+      </div>
 
-        <!-- Call History Table -->
-        <div>
-          <h3>Call History for ${phone}</h3>
-          <table class="table">
-            <thead>
-              <tr>
-                <th style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Call SID</th>
-                <th>From</th>
-                <th>To</th>
-                <th>Status</th>
-                <th>Duration (s)</th>
-                <th>DateTime</th>
-                <th>Direction</th>
-                <th>Cost</th>
-              </tr>
-            </thead>
-            <tbody class="call-history-table" data-phone="${phone}">
-              <tr><td colspan="8">Loading...</td></tr>
-            </tbody>
-          </table>
+      <!-- Call History Table -->
+      <div>
+        <h3>Call History for ${phone}</h3>
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Call SID</th>
+              <th>From</th>
+              <th>To</th>
+              <th>Status</th>
+              <th>Duration (s)</th>
+              <th>DateTime</th>
+              <th>Direction</th>
+              <th>Cost</th>
+            </tr>
+          </thead>
+          <tbody class="call-history-table" data-phone="${phone}">
+            <tr><td colspan="8">Loading...</td></tr>
+          </tbody>
+        </table>
 
-          <!-- Pagination Controls -->
-          <div class="paginator" data-phone="${phone}" style="margin-top: 10px; text-align: center;"></div>
-        </div>
+        <!-- Pagination Controls -->
+        <div class="paginator" data-phone="${phone}" style="margin-top: 10px; text-align: center;"></div>
+
+      </div>
       `;
 
-      document.body.appendChild(section);
-
-      fetchPhoneSetting(phone);
       fetchCallHistory(phone);
-
       return section;
     }
     
-    function fetchPhoneSetting(phone) {
-      axios.get(`https://twilio-api-t328.onrender.com/phone-setting/${phone}`)
-        .then(response => {
-          const settings = response.data;
-          const section = document.getElementById(`section-${phone}`);
-
-          if (!section) return;
-
-          let formGroup = section.querySelector(".form-group div");
-          formGroup.innerHTML = "";
-
-          settings.forEach(setting => {
-            let row = document.createElement("div");
-            row.style.display = "flex";
-            row.style.alignItems = "center";
-            row.style.marginBottom = "10px";
-
-            row.innerHTML = `
-              <input type="text" class="btn" style="width: 50px; background:white; color:black; border:2px solid #ccc; box-shadow:none; margin-bottom:10px;" value="${setting.digit}" disabled>
-              &nbsp;&nbsp;
-              <input type="text" class="form-control" value="${setting.response_text}" required style="text-align: center; width:100px" disabled>
-              &nbsp;&nbsp;
-              <input type="text" class="form-control" placeholder="Enter phone number" value="${setting.redirect_number || ''}" required disabled>
-              &nbsp;&nbsp;
-              <button class="btn btn-info" style="margin-left: 10px;" onclick="editRedirect('section-${phone}', ${setting.digit})">Edit</button>
-              <button class="btn btn-success" style="margin-left: 10px; display: none;" onclick="saveRedirect('section-${phone}', ${setting.digit})">Save</button>
-            `;
-
-            formGroup.appendChild(row);
-          });
-        })
-        .catch(error => console.error("Error fetching phone settings:", error));
-    }
-
     async function initiateCall() {
       const phoneNumber = document.getElementById("phone-number").value;
       const callTo = document.getElementById("call-to").value;
@@ -450,20 +443,6 @@
         loadingSpinner.style.display = "none";
         statusElement.innerText = `Error: ${error.response?.data?.message || error.message}`;
       }
-    }
-
-    function fetchPhoneSetting(number)
-    {
-      axios.get(`https://twilio-api-t328.onrender.com/call-history/${number}?page=${page}&limit=${limit}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-      .then(response => {
-
-      });
-      
-      fetchCallHistory(number);
     }
 
     function fetchCallHistory(number, page = 1, limit = 10)
@@ -549,27 +528,14 @@
         return;
       }
 
-      const requestData = {
-        digit: redirectInput.value,
-        response_text: descriptionInput.value,
-        redirect_number: phoneNumberInput.value
-      };
+      // Disable all inputs again
+      redirectInput.disabled = true;
+      descriptionInput.disabled = true;
+      phoneNumberInput.disabled = true;
 
-      axios.post(`https://twilio-api-t328.onrender.com/phone-setting/${number}`, {
-        digit: redirectInput.value,
-        response_text: descriptionInput.value,
-        redirect_number: phoneNumberInput.value
-      }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-      })
-      .then(() => {
-        redirectInput.disabled = true;
-        descriptionInput.disabled = true;
-        phoneNumberInput.disabled = true;
-
-        saveButton.style.display = 'none';
-        editButton.style.display = 'inline-block';
-      })
+      // Hide the save button and show the edit button again
+      saveButton.style.display = 'none';
+      editButton.style.display = 'inline-block';
     }
 
     function logout() {
