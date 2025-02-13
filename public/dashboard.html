@@ -452,20 +452,6 @@
       }
     }
 
-    function fetchPhoneSetting(number)
-    {
-      axios.get(`https://twilio-api-t328.onrender.com/call-history/${number}?page=${page}&limit=${limit}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-      .then(response => {
-
-      });
-      
-      fetchCallHistory(number);
-    }
-
     function fetchCallHistory(number, page = 1, limit = 10)
     {
       axios.get(`https://twilio-api-t328.onrender.com/call-history/${number}?page=${page}&limit=${limit}`, {
