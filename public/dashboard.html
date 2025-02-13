@@ -286,8 +286,8 @@
     document.addEventListener("DOMContentLoaded", async function () {
     phoneNumbers = await fetchPhoneNumbers();
 
-    phoneNumbers.forEach(phone => {
-      const section = createPhoneSection(phone);
+    for (const phone of phoneNumbers) {
+      const section = await createPhoneSection(phone);
       dynamicSection.appendChild(section);
 
       const sidebarLink = document.createElement("a");
@@ -299,7 +299,7 @@
       option.value = phone; 
       option.textContent = phone;
       phoneDropdown.append(option);
-    });
+    };
 
     const logoutLink = document.createElement("a");
     logoutLink.className = "btn";
