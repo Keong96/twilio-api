@@ -244,6 +244,39 @@
         width: 100%;
         margin-top: 10px;
       }
+
+      .table thead {
+        display: none; /* Hide table headers */
+      }
+
+      .table tbody, .table tr, .table td {
+        display: block;
+        width: 100%;
+      }
+
+      .table tr {
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        padding: 10px;
+        background: #fff;
+      }
+
+      .table td {
+        text-align: right;
+        position: relative;
+        padding-left: 50%;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .table td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 10px;
+        font-weight: bold;
+        color: #333;
+        text-align: left;
+      }
     }
   </style>
 </head>
@@ -410,7 +443,7 @@
           <table class="table">
             <thead>
               <tr>
-                <th style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Call SID</th>
+                <th>Call SID</th>
                 <th>From</th>
                 <th>To</th>
                 <th>Status</th>
