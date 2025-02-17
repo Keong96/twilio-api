@@ -124,23 +124,21 @@
       margin-top: 20px;
     }
 
-    .table th,
-    .table td {
+    .table th, .table td {
       padding: 10px;
       border: 1px solid #ddd;
       text-align: left;
     }
 
     .table th {
-      background: #6f42c1; /* Purple header */
+      background: #6f42c1;
       color: #fff;
     }
 
     .table td {
-      background: #f4f4f9; /* Light gray for table rows */
+      background: #f4f4f9;
     }
 
-    /* Adding style for the refresh icon */
     #refresh-icon {
       margin-left: 10px;
       font-size: 20px;
@@ -161,16 +159,16 @@
     }
 
     input:disabled, .form-control:disabled {
-      background-color: #f0f0f0;  /* Light gray background */
-      color: #888;  /* Lighter text color */
-      border: 2px solid #ccc;  /* Lighter border */
-      opacity: 0.6;  /* Reduced opacity for a "disabled" feel */
+      background-color: #f0f0f0;
+      color: #888;
+      border: 2px solid #ccc;
+      opacity: 0.6;
     }
 
     button:disabled {
-      background-color: #dcdcdc;  /* Disabled button color */
-      color: #888;  /* Disabled button text color */
-      cursor: not-allowed;  /* Change the cursor to indicate it can't be clicked */
+      background-color: #dcdcdc;
+      color: #888;
+      cursor: not-allowed;
     }
 
     .page-btn {
@@ -190,6 +188,42 @@
     .page-btn:hover {
       background: #0056b3;
       color: white;
+    }
+
+    /* Mobile responsiveness */
+    @media screen and (max-width: 768px) {
+      .container {
+        flex-direction: column;
+        align-items: center;
+        padding: 10px;
+      }
+
+      .sidebar {
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      .sidebar nav a {
+        display: inline-block;
+        margin: 5px;
+        padding: 10px 15px;
+      }
+
+      .main-content {
+        width: 100%;
+        padding: 15px;
+      }
+
+      .section {
+        padding: 20px;
+      }
+
+      .btn {
+        width: 100%;
+        padding: 12px;
+      }
     }
   </style>
 </head>
