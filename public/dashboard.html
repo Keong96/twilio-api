@@ -245,37 +245,30 @@
         margin-top: 10px;
       }
 
-      .table thead {
-        display: none; /* Hide table headers */
+      .table-container {
+        overflow-x: auto;
       }
 
-      .table tbody, .table tr, .table td {
-        display: block;
+      .table {
         width: 100%;
+        display: block;
+        overflow-x: auto;
+      }
+
+      .table thead {
+        display: table-header-group;
+      }
+
+      .table tbody {
+        display: table-row-group;
       }
 
       .table tr {
-        margin-bottom: 10px;
-        border: 1px solid #ccc;
-        padding: 10px;
-        background: #fff;
+        display: table-row;
       }
 
-      .table td {
-        text-align: right;
-        position: relative;
-        padding-left: 50%;
-        display: flex;
-        justify-content: space-between;
-      }
-
-      .table td::before {
-        content: attr(data-label);
-        position: absolute;
-        left: 10px;
-        font-weight: bold;
-        color: #333;
-        text-align: left;
+      .table td, .table th {
+        display: table-cell;
       }
     }
   </style>
