@@ -590,9 +590,9 @@
 
     function editRedirect(sectionId, number) {
       const section = document.getElementById(sectionId);
-      const redirectInput = section.querySelector(`#redirect${number}`);
-      const descriptionInput = section.querySelector(`#redirection-description${number}`);
-      const phoneNumberInput = section.querySelector(`#redirection-number${number}`);
+      const redirectInput = section.getElementById(`redirect${number}`);
+      const descriptionInput = section.getElementById(`redirection-description${number}`);
+      const phoneNumberInput = section.getElementById(`redirection-number${number}`);
       const editButton = section.querySelector(`#edit${number}`);
       const saveButton = section.querySelector(`#save${number}`);
       
@@ -608,9 +608,9 @@
 
     function saveRedirect(sectionId, number) {
       const section = document.getElementById(sectionId);
-      const redirectInput = section.querySelector(`#redirect${number}`);
-      const descriptionInput = section.querySelector(`#redirection-description${number}`);
-      const phoneNumberInput = section.querySelector(`#redirection-number${number}`);
+      const redirectInput = section.getElementById(`redirect${number}`);
+      const descriptionInput = section.getElementById(`redirection-description${number}`);
+      const phoneNumberInput = section.getElementById(`redirection-number${number}`);
       const editButton = section.querySelector(`#edit${number}`);
       const saveButton = section.querySelector(`#save${number}`);
 
