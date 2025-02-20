@@ -174,6 +174,11 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
       response.redirect('/call');
     }
 
+    console.log("User input:", userInput);
+    console.log("Phone number:", phoneNumber);
+    console.log("DB result:", result.rows);
+    console.log("Matching settings:", settings);
+
     res.type('text/xml');
     res.send(response.toString());
 });
