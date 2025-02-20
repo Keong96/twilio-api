@@ -207,7 +207,7 @@ app.post('/make-call', async (req, res) => {
 
   try {
     const call = await twilio_client.calls.create({
-      twiml: `https://twilio-api-t328.onrender.com/voice-response`,
+      url: `https://twilio-api-t328.onrender.com/voice-response`,
       to: to,
       from: phoneNumber,
     });
