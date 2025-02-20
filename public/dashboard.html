@@ -367,6 +367,7 @@
 
     document.addEventListener("DOMContentLoaded", async function () {
       phoneNumbers = await fetchPhoneNumbers();
+      initTwilio();
 
       for (const phone of phoneNumbers) {
         const section = await createPhoneSection(phone);
@@ -382,8 +383,6 @@
         option.textContent = phone;
         phoneDropdown.append(option);
       };
-
-      initTwilio();
 
       const logoutLink = document.createElement("a");
       logoutLink.className = "btn";
@@ -401,24 +400,27 @@
       sidebarNav.appendChild(logoutLink);
       });
 
-    async function initTwilio() {
-      try {
-        const response = await axios.post('https://twilio-api-t328.onrender.com/get-token');
-        const data = response.data;
+      async function initTwilio() {
+        try {
+          const response = await axios.post('https://twilio-api-t328.onrender.com/get-token');
+          const data = response.data;
 
-        device = new Twilio.Device(data.token, { logLevel: 1 });
+          device = new Twilio.Device(data.token, { logLevel: 1 });
 
-        device.on('ready', () => console.log('Twilio Device Ready'));
-        device.on('error', error => console.error('Twilio Error:', error));
+          device.on("ready", () => console.log("✅ Twilio Device Ready"));
+          device.on("error", error => console.error("❌ Twilio Error:", error));
 
-        device.on('incoming', connection => {
-          console.log('Incoming Call...');
-          connection.accept();
-        });
-      } catch (error) {
-        console.error('Error initializing Twilio:', error);
+          device.on("incoming", (connection) => {
+            console.log("📞 Incoming call from Twilio!");
+
+            connection.accept(); // ✅ Must accept the call!
+            console.log("✅ Call accepted!");
+          });
+
+        } catch (error) {
+          console.error("❌ Error initializing Twilio:", error);
+        }
       }
-    }
 
     async function fetchPhoneNumbers() {
       try {
@@ -549,8 +551,15 @@
         });
 
         loadingSpinner.style.display = "none";
+
         if (response.data.callSid) {
           statusElement.innerText = `Call initiated successfully. Call SID: ${response.data.callSid}`;
+
+          const connection = device.connect({ To: recipientNumber });
+          connection.on("accept", () => console.log("Call connected!"));
+          connection.on("disconnect", () => console.log("Call ended."));
+          connection.on("error", (error) => console.error("Call error:", error));
+
         } else {
           statusElement.innerText = "Call initiated, but no Call SID received.";
         }
