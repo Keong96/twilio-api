@@ -129,7 +129,7 @@ app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
 
     const isInbound = req.body.Direction === 'inbound';
     const phoneNumber = isInbound ? req.body.To : req.body.From;
-    const selectedLanguage = (await client.query('SELECT language FROM phone_number WHERE phone_number = $1', [phoneNumber])).rows[0]?.language;
+    const selectedLanguage = (await client.query('SELECT language FROM phone_numbers WHERE phone_number = $1', [phoneNumber])).rows[0]?.language;
     const result = await client.query('SELECT * FROM phone_settings WHERE phone_number = $1 ORDER BY digit ASC', [phoneNumber]);
     const ivrSettings =  result.rows;
 
@@ -205,7 +205,7 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
     const response = new twilio.twiml.VoiceResponse();
     const userInput = req.body.Digits;
     const phoneNumber = req.body.To;
-    const selectedLanguage = (await client.query('SELECT language FROM phone_number WHERE phone_number = $1', [phoneNumber])).rows[0]?.language;
+    const selectedLanguage = (await client.query('SELECT language FROM phone_numbers WHERE phone_number = $1', [phoneNumber])).rows[0]?.language;
     const result = await client.query('SELECT * FROM phone_settings WHERE phone_number = $1', [phoneNumber]);
 
     const settings = result.rows.find(row => row.digit === Number(userInput));
