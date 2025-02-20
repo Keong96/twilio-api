@@ -519,7 +519,7 @@
               &nbsp;&nbsp;
               <input id="redirection-description${setting.digit}" type="text" class="form-control" value="${setting.content}" required style="text-align: center; width:100px" disabled>
               &nbsp;&nbsp;
-              <input id="redirection-number${setting.digit}" type="text" class="form-control" placeholder="Enter phone number" value="${setting.phone_number || ''}" required disabled>
+              <input id="redirection-number${setting.digit}" type="text" class="form-control" placeholder="Enter phone number" value="${setting.redirect_to || ''}" required disabled>
               &nbsp;&nbsp;
               <button id="edit${setting.digit}" class="btn btn-info" style="margin-left: 10px;" onclick="editRedirect('section-${phone}', ${setting.digit})">Edit</button>
               <button id="save${setting.digit}" class="btn btn-success" style="margin-left: 10px; display: none;" onclick="saveRedirect('section-${phone}', ${setting.digit})">Save</button>
