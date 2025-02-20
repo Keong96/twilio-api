@@ -243,6 +243,10 @@ app.post('/phone-setting/:phoneNumber', verifyToken, async (req, res) => {
   const phoneNumber = req.params.phoneNumber;
   const { digit, content, redirect_to } = req.body;
 
+  if (!phoneNumber || !digit || !content || !redirect_to) {
+    return res.status(200).json({ error: "Missing required fields" });
+  }
+
   const existing = await client.query(
     `SELECT 1 FROM phone_settings WHERE phone_number = $1 AND digit = $2`,
     [phoneNumber, digit]

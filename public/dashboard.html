@@ -671,6 +671,11 @@
       const editButton = section.querySelector(`[id="edit${number}"]`);
       const saveButton = section.querySelector(`[id="save${number}"]`);
 
+      if (!redirectInput || !descriptionInput || !phoneNumberInput || !editButton || !saveButton) {
+        alert("One or more required elements are missing.");
+        return;
+      }
+
       if (!/^[0-9]$/.test(redirectInput.value)) {
         alert("Redirect number must be a single digit (0-9).");
         redirectInput.value = "";
