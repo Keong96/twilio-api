@@ -221,8 +221,13 @@ app.post('/make-call', async (req, res) => {
 
 app.post("/voice-response", (req, res) => {
   const twiml = new twilio.twiml.VoiceResponse();
+  const dial = twiml.dial();
 
-  twiml.dial().client("caller");
+  if (req.body.To && req.body.To.startsWith("client:")) {
+    dial.client(req.body.To.replace("client:", ""));
+  } else {
+    dial.client("caller"); 
+  }
 
   res.type("text/xml").send(twiml.toString());
 });
