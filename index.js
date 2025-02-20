@@ -167,16 +167,16 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
     const settings = result.rows.find(row => row.digit === Number(userInput));
 
     if (settings) {
-      response.say('请稍候，我们正在为您转接。');
+      response.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' }, '请稍候，我们正在为您转接。');
       response.pause({ length: 2 });
       response.dial({ 
-        answerOnBridge: true, 
+        answerOnBridge: false, 
         callerId: phoneNumber
       },
       settings.redirect_to
     );
     } else {
-      gather.say('無效的選擇，請重試。');
+      response.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' }, '無效的選擇，請重試。');
       const gather = response.gather({
         numDigits: 1,
         action: 'https://twilio-api-t328.onrender.com/process-input',
