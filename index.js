@@ -133,15 +133,21 @@ app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
     const ivrSettings = await getPhoneSettings(lookupNumber);
 
     if (ivrSettings.length === 0) {
-      response.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' }, '当前没有可用的选项，请稍后再试。');
+      //response.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' },'<speak><prosody rate="slow">当前没有可用的选项，请稍后再试。</prosody></speak>');
+      response.say({ language: 'en-US', voice: 'Polly.Joanna' }, '<speak><prosody rate="slow">There are currently no available options, please try again later.</prosody></speak>');
       response.hangup();
       res.type('text/xml').send(response.toString());
       return;
     }
 
-    let ivrMenuText = '欢迎致电，';
+    // let ivrMenuText = '欢迎致电，';
+    // ivrSettings.forEach(setting => {
+    //   ivrMenuText += `按 ${setting.digit}, ${setting.content}，`;
+    // });
+
+    let ivrMenuText = 'Welcome,';
     ivrSettings.forEach(setting => {
-      ivrMenuText += `按 ${setting.digit}, ${setting.content}，`;
+      ivrMenuText += `Press ${setting.digit} for ${setting.content}，`;
     });
 
     const gather = response.gather({
@@ -150,7 +156,8 @@ app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
       method: 'POST',
     });
 
-    gather.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' }, ivrMenuText);
+    //gather.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' },`<speak><prosody rate="slow">${ivrMenuText}</prosody></speak>`);
+    gather.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' }, `<speak><prosody rate="slow">${ivrMenuText}</prosody></speak>`);
 
     res.type('text/xml');
     res.send(response.toString());
@@ -167,7 +174,8 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
     const settings = result.rows.find(row => row.digit === Number(userInput));
 
     if (settings) {
-      response.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' }, '请稍候，我们正在为您转接。');
+      //response.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' }, '<speak><prosody rate="slow">请稍候，我们正在为您转接。</prosody></speak>');
+      response.say({ language: 'en-US', voice: 'Polly.Joanna' }, '<speak><prosody rate="slow">Please wait, we are transferring your call.</prosody></speak>');
       response.pause({ length: 2 });
       response.dial({ 
         answerOnBridge: false, 
@@ -176,7 +184,8 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
       settings.redirect_to
     );
     } else {
-      response.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' }, '無效的選擇，請重試。');
+      //response.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' }, '<speak><prosody rate="slow">無效的選擇，請重試。</prosody></speak>');
+      response.say({ language: 'en-US', voice: 'Polly.Joanna' }, '<speak><prosody rate="slow">Invalid selection, please try again.</prosody></speak>');
       const gather = response.gather({
         numDigits: 1,
         action: 'https://twilio-api-t328.onrender.com/process-input',
