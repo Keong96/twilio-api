@@ -146,7 +146,7 @@ app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
         );
       } else if (selectedLanguage === 'ms') {
         response.say(
-          { language: 'ms-MY', voice: 'Polly.Puteri' },
+          { language: 'ms-MY', voice: 'Google.ms-MY-Standard-A' },
           '<speak><prosody rate="slow">Tiada pilihan yang tersedia pada masa ini, sila cuba lagi kemudian.</prosody></speak>'
         );
       }
@@ -154,7 +154,7 @@ app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
       res.type('text/xml').send(response.toString());
       return;
     }
-
+    
     let ivrMenuText = '';
     if (selectedLanguage === 'cmn') {
       ivrMenuText = '欢迎致电，';
@@ -191,7 +191,7 @@ app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
       );
     } else if (selectedLanguage === 'ms') {
       gather.say(
-        { language: 'ms-MY', voice: 'Polly.Puteri' },
+        { language: 'ms-MY', voice: 'Google.ms-MY-Standard-A' },
         `<speak><prosody rate="slow">${ivrMenuText}</prosody></speak>`
       );
     }
@@ -223,7 +223,7 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
         );
       } else if (selectedLanguage === 'ms') {
         response.say(
-          { language: 'ms-MY', voice: 'Polly.Puteri' },
+          { language: 'ms-MY', voice: 'Google.ms-MY-Standard-A' },
           '<speak><prosody rate="slow">Sila tunggu, kami sedang memindahkan panggilan anda.</prosody></speak>'
         );
       }
@@ -241,7 +241,7 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
       } else if (selectedLanguage === 'en') {
         response.say({ language: 'en-US', voice: 'Polly.Joanna' }, '<speak><prosody rate="slow">Invalid selection, please try again.</prosody></speak>');
       } else if (selectedLanguage === 'ms') {
-        response.say({ language: 'ms-MY', voice: 'Polly.Puteri' }, '<speak><prosody rate="slow">Pilihan tidak sah, sila cuba lagi.</prosody></speak>');
+        response.say({ language: 'ms-MY', voice: 'Google.ms-MY-Standard-A' }, '<speak><prosody rate="slow">Pilihan tidak sah, sila cuba lagi.</prosody></speak>');
       }      
       const gather = response.gather({
         numDigits: 1,
