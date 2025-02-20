@@ -221,11 +221,11 @@ app.post('/make-call', async (req, res) => {
 
 app.post('/voice-response', (req, res) => {
   const twiml = new twilio.twiml.VoiceResponse();
-  
+
   // When the recipient answers, they are joined to the conference.
   twiml.dial().conference('MyConferenceRoom', {
     startConferenceOnEnter: true,
-    endConferenceOnExit: false
+    endConferenceOnExit: true
   });
   res.type('text/xml').send(twiml.toString());
 });
