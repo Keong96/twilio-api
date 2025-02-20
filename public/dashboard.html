@@ -554,12 +554,6 @@
 
         if (response.data.callSid) {
           statusElement.innerText = `Call initiated successfully. Call SID: ${response.data.callSid}`;
-
-          const connection = device.connect({ To: callTo });
-          connection.on("accept", () => console.log("Call connected!"));
-          connection.on("disconnect", () => console.log("Call ended."));
-          connection.on("error", (error) => console.error("Call error:", error));
-
         } else {
           statusElement.innerText = "Call initiated, but no Call SID received.";
         }
