@@ -647,11 +647,11 @@
 
     function editRedirect(sectionId, number) {
       const section = document.getElementById(sectionId);
-      const redirectInput = document.getElementById(`redirect${number}`);
-      const descriptionInput = document.getElementById(`redirection-description${number}`);
-      const phoneNumberInput = document.getElementById(`redirection-number${number}`);
-      const editButton = section.querySelector(`#edit${number}`);
-      const saveButton = section.querySelector(`#save${number}`);
+      const redirectInput = section.querySelector(`[id="redirect${number}"]`);
+      const descriptionInput = section.querySelector(`[id="redirection-description${number}"]`);
+      const phoneNumberInput = section.querySelector(`[id="redirection-number${number}"]`);
+      const editButton = section.querySelector(`[id="edit${number}"]`);
+      const saveButton = section.querySelector(`[id="save${number}"]`);
       
       // Enable all inputs
       redirectInput.disabled = false;
@@ -665,11 +665,11 @@
 
     function saveRedirect(sectionId, number) {
       const section = document.getElementById(sectionId);
-      const redirectInput = document.getElementById(`redirect${number}`);
-      const descriptionInput = document.getElementById(`redirection-description${number}`);
-      const phoneNumberInput = document.getElementById(`redirection-number${number}`);
-      const editButton = section.querySelector(`#edit${number}`);
-      const saveButton = section.querySelector(`#save${number}`);
+      const redirectInput = section.querySelector(`[id="redirect${number}"]`);
+      const descriptionInput = section.querySelector(`[id="redirection-description${number}"]`);
+      const phoneNumberInput = section.querySelector(`[id="redirection-number${number}"]`);
+      const editButton = section.querySelector(`[id="edit${number}"]`);
+      const saveButton = section.querySelector(`[id="save${number}"]`);
 
       if (!/^[0-9]$/.test(redirectInput.value)) {
         alert("Redirect number must be a single digit (0-9).");
