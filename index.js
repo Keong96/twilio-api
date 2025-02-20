@@ -4,6 +4,8 @@ const jwt = require("jsonwebtoken");
 const bodyParser = require("body-parser");
 const { Client } = require('pg');
 require('dotenv').config();
+const AccessToken = twilio.jwt.AccessToken;
+const VoiceGrant = AccessToken.VoiceGrant;
 const VoiceResponse = require('twilio').twiml.VoiceResponse;
 const app = express();
 
@@ -58,19 +60,14 @@ function verifyToken(req, res, next) {
 
 // WebRTC Token Generation
 app.post('/get-token', (req, res) => {
-  const clientName = 'web_client';
-
-  const AccessToken = twilio.jwt.AccessToken;
-  const VoiceGrant = AccessToken.VoiceGrant;
+  const identity  = 'caller';
 
   const voiceGrant = new VoiceGrant({
     outgoingApplicationSid: TWILIO_TWIML_APP_SID,
-    incomingAllow: true,
   });
 
-  const token = new AccessToken(TWILIO_ACCOUNT_SID, TWILIO_API_KEY, TWILIO_API_SECRET);
+  const token = new AccessToken(TWILIO_ACCOUNT_SID, TWILIO_API_KEY, TWILIO_API_SECRET, identity);
   token.addGrant(voiceGrant);
-  token.identity = clientName;
 
   res.json({ token: token.toJwt() });
 });
