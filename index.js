@@ -170,7 +170,6 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
       response.say('请稍候，我们正在为您转接。');
       response.pause({ length: 2 });
       response.dial({ answerOnBridge: true }, settings.redirect_to);
-      response.hangup();
     } else {
       gather.say('無效的選擇，請重試。');
       const gather = response.gather({
