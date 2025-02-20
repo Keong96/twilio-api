@@ -9,6 +9,9 @@ const app = express();
 
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+const TWILIO_TWIML_APP_SID = process.env.TWILIO_TWIML_APP_SID;
+const TWILIO_API_KEY = process.env.TWILIO_API_KEY;
+const TWILIO_API_SECRET = process.env.TWILIO_API_SECRET;
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
@@ -52,6 +55,25 @@ function verifyToken(req, res, next) {
     res.sendStatus(401);
   }
 }
+
+// WebRTC Token Generation
+app.post('/get-token', (req, res) => {
+  const clientName = 'web_client';
+
+  const AccessToken = twilio.jwt.AccessToken;
+  const VoiceGrant = AccessToken.VoiceGrant;
+
+  const voiceGrant = new VoiceGrant({
+    outgoingApplicationSid: TWILIO_TWIML_APP_SID,
+    incomingAllow: true,
+  });
+
+  const token = new AccessToken(TWILIO_ACCOUNT_SID, TWILIO_API_KEY, TWILIO_API_SECRET);
+  token.addGrant(voiceGrant);
+  token.identity = clientName;
+
+  res.json({ token: token.toJwt() });
+});
 
 app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'login.html'));
@@ -164,22 +186,48 @@ app.post('/process-input', express.urlencoded({ extended: false }), (req, res) =
 });
 
 // 測試撥打電話
-app.post('/make-call', express.json(), async (req, res) => {
-    const phoneNumber = req.body.phoneNumber;
-    const to = req.body.to;
+// app.post('/make-call', express.json(), async (req, res) => {
+//     const phoneNumber = req.body.phoneNumber;
+//     const to = req.body.to;
     
-    try {
-        const call = await twilio_client.calls.create({
-            url: 'https://twilio-api-t328.onrender.com/call',
-            to,
-            from: phoneNumber,
-        });
+//     try {
+//         const call = await twilio_client.calls.create({
+//             url: 'https://twilio-api-t328.onrender.com/call',
+//             to,
+//             from: phoneNumber,
+//         });
 
-        res.json({ message: 'Call initiated', callSid: call.sid });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error initiating call', error: error.message });
-    }
+//         res.json({ message: 'Call initiated', callSid: call.sid });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: 'Error initiating call', error: error.message });
+//     }
+// });
+
+app.post('/make-call', async (req, res) => {
+  const phoneNumber = req.body.phoneNumber;
+  const to = req.body.to;
+
+  try {
+    const call = await twilioClient.calls.create({
+      twiml: `https://twilio-api-t328.onrender.com/voice-response`,
+      to: to,
+      from: phoneNumber,
+    });
+
+    res.json({ message: 'Call initiated', callSid: call.sid });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error initiating call', error: error.message });
+  }
+});
+
+app.post("/voice-response", (req, res) => {
+  const twiml = new twilio.twiml.VoiceResponse();
+
+  twiml.dial().client("caller");
+
+  res.type("text/xml").send(twiml.toString());
 });
 
 // 截取号码设置
@@ -195,13 +243,26 @@ app.post('/phone-setting/:phoneNumber', verifyToken, async (req, res) => {
   const phoneNumber = req.params.phoneNumber;
   const { digit, content, redirect_to } = req.body;
 
-  await client.query(
-    `INSERT INTO phone_settings (phone_number, digit, content, redirect_to)
-     VALUES ($1, $2, $3, $4)
-     ON CONFLICT (phone_number, digit) 
-     DO UPDATE SET content = EXCLUDED.content, redirect_to = EXCLUDED.redirect_to`,
-    [phoneNumber, digit, content, redirect_to]
+  const existing = await client.query(
+    `SELECT 1 FROM phone_settings WHERE phone_number = $1 AND digit = $2`,
+    [phoneNumber, digit]
   );
+
+  if (existing.rowCount > 0) {
+    // Update if record exists
+    await client.query(
+      `UPDATE phone_settings SET content = $3, redirect_to = $4 
+       WHERE phone_number = $1 AND digit = $2`,
+      [phoneNumber, digit, content, redirect_to]
+    );
+  } else {
+    // Insert if no record exists
+    await client.query(
+      `INSERT INTO phone_settings (phone_number, digit, content, redirect_to)
+       VALUES ($1, $2, $3, $4)`,
+      [phoneNumber, digit, content, redirect_to]
+    );
+  }
 
   res.status(200).json({ message: "Phone setting saved successfully" });
 });
