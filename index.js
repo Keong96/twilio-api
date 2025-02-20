@@ -128,27 +128,50 @@ app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
     const response = new twilio.twiml.VoiceResponse();
 
     const isInbound = req.body.Direction === 'inbound';
-    const lookupNumber = isInbound ? req.body.To : req.body.From;
-
-    const ivrSettings = await getPhoneSettings(lookupNumber);
+    const phoneNumber = isInbound ? req.body.To : req.body.From;
+    const selectedLanguage = (await client.query('SELECT language FROM phone_number WHERE phone_number = $1', [phoneNumber])).rows[0]?.language;
+    const result = await client.query('SELECT * FROM phone_settings WHERE phone_number = $1 ORDER BY digit ASC', [phoneNumber]);
+    const ivrSettings =  result.rows;
 
     if (ivrSettings.length === 0) {
-      //response.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' },'<speak><prosody rate="slow">当前没有可用的选项，请稍后再试。</prosody></speak>');
-      response.say({ language: 'en-US', voice: 'Polly.Joanna' }, '<speak><prosody rate="slow">There are currently no available options, please try again later.</prosody></speak>');
+      if (selectedLanguage === 'cmn') {
+        response.say(
+          { language: 'cmn-CN', voice: 'Polly.Zhiyu' },
+          '<speak><prosody rate="slow">当前没有可用的选项，请稍后再试。</prosody></speak>'
+        );
+      } else if (selectedLanguage === 'en') {
+        response.say(
+          { language: 'en-US', voice: 'Polly.Joanna' },
+          '<speak><prosody rate="slow">There are currently no available options, please try again later.</prosody></speak>'
+        );
+      } else if (selectedLanguage === 'ms') {
+        response.say(
+          { language: 'ms-MY', voice: 'Polly.Puteri' },
+          '<speak><prosody rate="slow">Tiada pilihan yang tersedia pada masa ini, sila cuba lagi kemudian.</prosody></speak>'
+        );
+      }
       response.hangup();
       res.type('text/xml').send(response.toString());
       return;
     }
 
-    // let ivrMenuText = '欢迎致电，';
-    // ivrSettings.forEach(setting => {
-    //   ivrMenuText += `按 ${setting.digit}, ${setting.content}，`;
-    // });
-
-    let ivrMenuText = 'Welcome,';
-    ivrSettings.forEach(setting => {
-      ivrMenuText += `Press ${setting.digit} for ${setting.content}，`;
-    });
+    let ivrMenuText = '';
+    if (selectedLanguage === 'cmn') {
+      ivrMenuText = '欢迎致电，';
+      ivrSettings.forEach(setting => {
+        ivrMenuText += `按 ${setting.digit}，${setting.content}，`;
+      });
+    } else if (selectedLanguage === 'en') {
+      ivrMenuText = 'Welcome, ';
+      ivrSettings.forEach(setting => {
+        ivrMenuText += `Press ${setting.digit} for ${setting.content}, `;
+      });
+    } else if (selectedLanguage === 'ms') {
+      ivrMenuText = 'Selamat datang, ';
+      ivrSettings.forEach(setting => {
+        ivrMenuText += `Tekan ${setting.digit} untuk ${setting.content}, `;
+      });
+    }
 
     const gather = response.gather({
       numDigits: 1,
@@ -156,8 +179,22 @@ app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
       method: 'POST',
     });
 
-    //gather.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' },`<speak><prosody rate="slow">${ivrMenuText}</prosody></speak>`);
-    gather.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' }, `<speak><prosody rate="slow">${ivrMenuText}</prosody></speak>`);
+    if (selectedLanguage === 'cmn') {
+      gather.say(
+        { language: 'cmn-CN', voice: 'Polly.Zhiyu' },
+        `<speak><prosody rate="slow">${ivrMenuText}</prosody></speak>`
+      );
+    } else if (selectedLanguage === 'en') {
+      gather.say(
+        { language: 'en-US', voice: 'Polly.Joanna' },
+        `<speak><prosody rate="slow">${ivrMenuText}</prosody></speak>`
+      );
+    } else if (selectedLanguage === 'ms') {
+      gather.say(
+        { language: 'ms-MY', voice: 'Polly.Puteri' },
+        `<speak><prosody rate="slow">${ivrMenuText}</prosody></speak>`
+      );
+    }
 
     res.type('text/xml');
     res.send(response.toString());
@@ -168,14 +205,29 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
     const response = new twilio.twiml.VoiceResponse();
     const userInput = req.body.Digits;
     const phoneNumber = req.body.To;
-
+    const selectedLanguage = (await client.query('SELECT language FROM phone_number WHERE phone_number = $1', [phoneNumber])).rows[0]?.language;
     const result = await client.query('SELECT * FROM phone_settings WHERE phone_number = $1', [phoneNumber]);
 
     const settings = result.rows.find(row => row.digit === Number(userInput));
 
     if (settings) {
-      //response.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' }, '<speak><prosody rate="slow">请稍候，我们正在为您转接。</prosody></speak>');
-      response.say({ language: 'en-US', voice: 'Polly.Joanna' }, '<speak><prosody rate="slow">Please wait, we are transferring your call.</prosody></speak>');
+      if (selectedLanguage === 'cmn') {
+        response.say(
+          { language: 'cmn-CN', voice: 'Polly.Zhiyu' },
+          '<speak><prosody rate="slow">请稍候，我们正在为您转接。</prosody></speak>'
+        );
+      } else if (selectedLanguage === 'en') {
+        response.say(
+          { language: 'en-US', voice: 'Polly.Joanna' },
+          '<speak><prosody rate="slow">Please wait, we are transferring your call.</prosody></speak>'
+        );
+      } else if (selectedLanguage === 'ms') {
+        response.say(
+          { language: 'ms-MY', voice: 'Polly.Puteri' },
+          '<speak><prosody rate="slow">Sila tunggu, kami sedang memindahkan panggilan anda.</prosody></speak>'
+        );
+      }
+      
       response.pause({ length: 2 });
       response.dial({ 
         answerOnBridge: false, 
@@ -184,8 +236,13 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
       settings.redirect_to
     );
     } else {
-      //response.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' }, '<speak><prosody rate="slow">無效的選擇，請重試。</prosody></speak>');
-      response.say({ language: 'en-US', voice: 'Polly.Joanna' }, '<speak><prosody rate="slow">Invalid selection, please try again.</prosody></speak>');
+      if (selectedLanguage === 'cmn') {
+        response.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' }, '<speak><prosody rate="slow">無效的選擇，請重試。</prosody></speak>');
+      } else if (selectedLanguage === 'en') {
+        response.say({ language: 'en-US', voice: 'Polly.Joanna' }, '<speak><prosody rate="slow">Invalid selection, please try again.</prosody></speak>');
+      } else if (selectedLanguage === 'ms') {
+        response.say({ language: 'ms-MY', voice: 'Polly.Puteri' }, '<speak><prosody rate="slow">Pilihan tidak sah, sila cuba lagi.</prosody></speak>');
+      }      
       const gather = response.gather({
         numDigits: 1,
         action: 'https://twilio-api-t328.onrender.com/process-input',
@@ -267,11 +324,6 @@ app.post('/phone-setting/:phoneNumber', verifyToken, async (req, res) => {
 
   res.status(200).json({ message: "Phone setting saved successfully" });
 });
-
-async function getPhoneSettings(phoneNumber) {
-  const result = await client.query('SELECT * FROM phone_settings WHERE phone_number = $1 ORDER BY digit ASC', [phoneNumber]);
-  return result.rows;
-}
 
 // 截取撥打記錄
 app.get('/call-history/:phoneNumber', verifyToken, async (req, res) => {
