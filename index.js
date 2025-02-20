@@ -171,13 +171,12 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
       response.dial(settings.redirect_to);
     } else {
       response.say('無效的選擇，請重試。');
-      response.redirect('https://twilio-api-t328.onrender.com/call');
+      const gather = response.gather({
+        numDigits: 1,
+        action: 'https://twilio-api-t328.onrender.com/process-input',
+        method: 'POST'
+      });
     }
-
-    console.log("User input:", userInput);
-    console.log("Phone number:", phoneNumber);
-    console.log("DB result:", result.rows);
-    console.log("Matching settings:", settings);
 
     res.type('text/xml');
     res.send(response.toString());
