@@ -157,25 +157,20 @@ app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
 });
 
 // 處理用戶輸入
-app.post('/process-input', express.urlencoded({ extended: false }), (req, res) => {
+app.post('/process-input', express.urlencoded({ extended: false }), async (req, res) => {
     const response = new twilio.twiml.VoiceResponse();
     const userInput = req.body.Digits;
+    const phoneNumber = req.body.To;
 
-    switch (userInput) {
-        case '1':
-            response.dial('+1234567890');
-            break;
-        case '2':
-            response.dial('+0987654321');
-            break;
-        case '3':
-            response.say('感謝您查詢，請稍後再聯絡我們。');
-            response.hangup();
-            break;
-        default:
-            response.say('無效的選擇，請重試。');
-            response.redirect('/call');
-            break;
+    const result = await client.query('SELECT * FROM phone_settings WHERE phone_number = $1', [phoneNumber]);
+
+    const settings = result.rows.find(row => row.digit === userInput);
+
+    if (settings) {
+      response.dial(settings.redirect_to);
+    } else {
+      response.say('無效的選擇，請重試。');
+      response.redirect('/call');
     }
 
     res.type('text/xml');
@@ -183,24 +178,6 @@ app.post('/process-input', express.urlencoded({ extended: false }), (req, res) =
 });
 
 // 測試撥打電話
-// app.post('/make-call', express.json(), async (req, res) => {
-//     const phoneNumber = req.body.phoneNumber;
-//     const to = req.body.to;
-    
-//     try {
-//         const call = await twilio_client.calls.create({
-//             url: 'https://twilio-api-t328.onrender.com/call',
-//             to,
-//             from: phoneNumber,
-//         });
-
-//         res.json({ message: 'Call initiated', callSid: call.sid });
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ message: 'Error initiating call', error: error.message });
-//     }
-// });
-
 app.post('/make-call', async (req, res) => {
   const phoneNumber = req.body.phoneNumber;
   const to = req.body.to;
