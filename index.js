@@ -164,14 +164,14 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
 
     const result = await client.query('SELECT * FROM phone_settings WHERE phone_number = $1', [phoneNumber]);
 
-    const settings = result.rows.find(row => row.digit === userInput);
+    const settings = result.rows.find(row => row.digit === Number(userInput));
 
     if (settings) {
       response.say('请稍候，我们正在为您转接。');
       response.dial(settings.redirect_to);
     } else {
       response.say('無效的選擇，請重試。');
-      response.redirect('/call');
+      response.redirect('https://twilio-api-t328.onrender.com/call');
     }
 
     console.log("User input:", userInput);
