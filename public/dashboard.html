@@ -301,7 +301,8 @@
             <label for="call-to">Call To:</label>
             <input type="text" id="call-to" class="form-control" placeholder="Enter phone number" required>
           </div>
-          <button type="button" onclick="initiateCall()" class="btn">Call</button>
+          <button id="init-call-button" type="button" onclick="initiateCall()" class="btn">Call< i class="fas fa-phone"></i> </button>
+          <button id="hangup-call-button" type="button" onclick="hangUpCall()" class="btn btn-danger" disabled>Hang Up  <i class="fas fa-phone-slash"></i> </button>
         </form>
         <p id="make-call-status"></p>
     
@@ -342,6 +343,7 @@
   <script>
     const token = localStorage.getItem("token");
     let device;
+    let activeConnection = null;
 
     if(!token)
     {
@@ -400,7 +402,7 @@
       sidebarNav.appendChild(logoutLink);
       });
 
-      async function initTwilio() {
+    async function initTwilio() {
         try {
           const response = await axios.post('https://twilio-api-t328.onrender.com/get-token');
           const data = response.data;
@@ -555,10 +557,18 @@
         if (response.data.callSid) {
           statusElement.innerText = `Call initiated successfully. Call SID: ${response.data.callSid}`;
 
-          const connection = device.connect({ conference: 'MyConferenceRoom' });
-          connection.on("accept", () => console.log("Joined conference!"));
-          connection.on("disconnect", () => console.log("Left conference."));
-          connection.on("error", (error) => console.error("Call error:", error));
+          activeConnection = device.connect({ conference: 'MyConferenceRoom' });
+          activeConnection.on("accept", () => {
+            console.log("Joined conference!")
+            document.getElementById("init-call-button").disabled = true;
+            document.getElementById("hangup-call-button").disabled = false;
+          });
+          activeConnection.on("disconnect", () => {
+            console.log("Left conference.")
+            document.getElementById("init-call-button").disabled = false;
+            document.getElementById("hangup-call-button").disabled = true;
+          });
+          activeConnection.on("error", (error) => console.error("Call error:", error));
 
         } else {
           statusElement.innerText = "Call initiated, but no Call SID received.";
@@ -568,6 +578,17 @@
         loadingSpinner.style.display = "none";
         statusElement.innerText = `Error: ${error.response?.data?.message || error.message}`;
       }
+    }
+
+    function hangUpCall() {
+      if (activeConnection) {
+        activeConnection.disconnect();
+      } else {
+        device.disconnectAll();
+      }
+
+      document.getElementById("init-call-button").disabled = true;
+      document.getElementById("hangup-call-button").disabled = false;
     }
 
     function fetchCallHistory(number, page = 1, limit = 10)
