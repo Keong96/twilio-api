@@ -219,17 +219,15 @@ app.post('/make-call', async (req, res) => {
   }
 });
 
-app.post("/voice-response", (req, res) => {
+app.post('/voice-response', (req, res) => {
   const twiml = new twilio.twiml.VoiceResponse();
-  const dial = twiml.dial();
-
-  if (req.body.To && req.body.To.startsWith("client:")) {
-    dial.client(req.body.To.replace("client:", ""));
-  } else {
-    dial.client("caller"); 
-  }
-
-  res.type("text/xml").send(twiml.toString());
+  
+  // When the recipient answers, they are joined to the conference.
+  twiml.dial().conference('MyConferenceRoom', {
+    startConferenceOnEnter: true,
+    endConferenceOnExit: false
+  });
+  res.type('text/xml').send(twiml.toString());
 });
 
 // 截取号码设置
