@@ -141,7 +141,7 @@ app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
 
     let ivrMenuText = '欢迎致电，';
     ivrSettings.forEach(setting => {
-      ivrMenuText += `按 ${setting.digit} ${setting.response_text}，`;
+      ivrMenuText += `按 ${setting.digit}, ${setting.content}，`;
     });
 
     const gather = response.gather({
