@@ -168,7 +168,9 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
 
     if (settings) {
       response.say('请稍候，我们正在为您转接。');
+      response.pause({ length: 2 });
       response.dial(settings.redirect_to);
+      response.hangup();
     } else {
       response.say('無效的選擇，請重試。');
       const gather = response.gather({
