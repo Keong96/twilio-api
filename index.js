@@ -127,7 +127,7 @@ app.get("/get-cover-name/:phoneNumber", verifyToken, async (req, res) => {
   const { phoneNumber } = req.params;
   try {
     const result = await client.query("SELECT cover_name FROM phone_numbers WHERE phone_number = $1", [phoneNumber]);
-    return res.json(result.rows.length ? result.rows[0].cover_name : null);
+    return res.status(200).send(result.rows[0].cover_name);
   } catch (error) {
     console.error("Error fetching cover name:", error);
     res.status(500).json({ error: "Internal server error" });
