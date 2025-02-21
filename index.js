@@ -288,7 +288,7 @@ app.post('/voice-response', (req, res) => {
 app.get('/phone-setting/:phoneNumber', verifyToken, async (req, res) => {
 
   const phoneNumber = req.params.phoneNumber;
-  const result = await client.query('SELECT * FROM phone_settings WHERE phone_number = $1', [phoneNumber]);
+  const result = await client.query('SELECT * FROM phone_settings WHERE phone_number = $1 ORDER BY digit ASC', [phoneNumber]);
   return res.status(200).json(result.rows);
 });
 
