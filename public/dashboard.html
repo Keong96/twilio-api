@@ -447,7 +447,7 @@
           }
         });
 
-        return response.data;
+        return response.data.cover_name;
       } catch (error) {
         console.error("Error fetching phone numbers:", error);
         return [];
@@ -470,7 +470,7 @@
         <div class="form-group">
           <label for="phone-number-redirection">Redirect To:</label>
 
-          <input id="cover-name-${phone}" type="text" class="btn" style="width: 150px; background:white; color:black; border:2px solid #ccc; box-shadow:none; margin-bottom:10px;" value="${cover_name}" disabled>
+          <input id="cover-name-${phone}" type="text" class="btn" style="width: 300px; background:white; color:black; border:2px solid #ccc; box-shadow:none; margin-bottom:10px;" value="${cover_name}" disabled>
           <button id="edit-cover-name${phone}" class="btn btn-info" style="margin-left: 10px;" onclick="editCoverName('${phone}')">Edit</button>
           <button id="save-cover-name${phone}" class="btn btn-success" style="margin-left: 10px; display: none;" onclick="saveCoverName('${phone}')">Save</button>
 
@@ -738,7 +738,7 @@
       const editButton = document.getElementById(`edit-cover-name${phone}`);
       const saveButton = document.getElementById(`save-cover-name${phone}`);
 
-      axios.post(`https://twilio-api-t328.onrender.com/phone-setting/${phone}`, {
+      axios.post(`https://twilio-api-t328.onrender.com/update-cover-name/${phone}`, {
         cover_name: coverInput.value
       }, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
