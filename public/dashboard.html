@@ -447,7 +447,7 @@
           }
         });
 
-        return response.data.cover_name;
+        return response.data;
       } catch (error) {
         console.error("Error fetching phone numbers:", error);
         return [];
@@ -459,8 +459,8 @@
       section.classList.add("section");
       section.id = `section-${phone}`;
 
-      let cover_name = getCoverName(phone);
-      console.log(cover_name);
+      let cover_name = getCoverName(phone) | "";
+
       section.innerHTML = `
         <h2>${phone} Settings 
           <i class="fa fa-refresh" id="refresh-icon" data-phone="${phone}" style="cursor: pointer;"></i>
