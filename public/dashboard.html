@@ -665,6 +665,7 @@
 
     function saveRedirect(sectionId, number) {
       const section = document.getElementById(sectionId);
+      const phoneNumber = section.id.replace('section-', '');
       const redirectInput = section.querySelector(`[id="redirect${number}"]`);
       const descriptionInput = section.querySelector(`[id="redirection-description${number}"]`);
       const phoneNumberInput = section.querySelector(`[id="redirection-number${number}"]`);
@@ -683,7 +684,7 @@
         return;
       }
 
-      axios.post(`https://twilio-api-t328.onrender.com/phone-setting/${number}`, {
+      axios.post(`https://twilio-api-t328.onrender.com/phone-setting/${phoneNumber}`, {
         digit: redirectInput.value,
         content: descriptionInput.value,
         redirect_to: phoneNumberInput.value
