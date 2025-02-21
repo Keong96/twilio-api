@@ -683,15 +683,9 @@
         return;
       }
 
-      const requestData = {
-        digit: redirectInput.value,
-        response_text: descriptionInput.value,
-        redirect_number: phoneNumberInput.value
-      };
-
       axios.post(`https://twilio-api-t328.onrender.com/phone-setting/${number}`, {
         digit: redirectInput.value,
-        response_text: descriptionInput.value,
+        content: descriptionInput.value,
         redirect_number: phoneNumberInput.value
       }, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
