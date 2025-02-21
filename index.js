@@ -309,9 +309,8 @@ app.post('/phone-setting/:phoneNumber', verifyToken, async (req, res) => {
   if (existing.rowCount > 0) {
     // Update if record exists
     await client.query(
-      `UPDATE phone_settings SET content = $3, redirect_to = $4 
-       WHERE phone_number = $1 AND digit = $2`,
-      [phoneNumber, digit, content, redirect_to]
+      `UPDATE phone_settings SET content = $1, redirect_to = $2 WHERE phone_number = $3 AND digit = $4`,
+      [content, redirect_to, phoneNumber, digit]
     );
   } else {
     // Insert if no record exists
