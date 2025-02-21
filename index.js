@@ -229,12 +229,14 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
       }
       
       response.pause({ length: 2 });
-      response.dial({ 
-        answerOnBridge: false, 
-        callerId: phoneNumber
-      },
-      settings.redirect_to
-    );
+      let dialOptions = { answerOnBridge: false };
+
+      if (result.rows[0].cover_number) {
+        dialOptions.callerId = phoneNumber;
+      }
+
+      response.dial(dialOptions, settings.redirect_to);
+      
     } else {
       if (selectedLanguage === 'cmn') {
         response.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' }, '<speak><prosody rate="slow">無效的選擇，請重試。</prosody></speak>');
