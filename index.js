@@ -123,6 +123,17 @@ app.get('/phone-numbers', verifyToken, async(req, res) => {
   return res.status(200).json(phoneNumbers);
 });
 
+app.get("/get-cover-name/:phoneNumber", verifyToken, async (req, res) => {
+  const { phoneNumber } = req.params;
+  try {
+    const result = await client.query("SELECT cover_name FROM phone_numbers WHERE phone_number = $1", [phoneNumber]);
+    return res.json(result.rows.length ? result.rows[0].cover_name : null);
+  } catch (error) {
+    console.error("Error fetching cover name:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // 處理來電 Webhook
 app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
     const response = new twilio.twiml.VoiceResponse();
@@ -130,6 +141,8 @@ app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
     const isInbound = req.body.Direction === 'inbound';
     const phoneNumber = isInbound ? req.body.To : req.body.From;
     const selectedLanguage = (await client.query('SELECT language FROM phone_numbers WHERE phone_number = $1', [phoneNumber])).rows[0]?.language;
+    const cover_name = (await client.query('SELECT cover_name FROM phone_numbers WHERE phone_number = $1', [phoneNumber])).rows[0]?.cover_name;
+
     const result = await client.query('SELECT * FROM phone_settings WHERE phone_number = $1 ORDER BY digit ASC', [phoneNumber]);
     const ivrSettings =  result.rows;
 
@@ -157,17 +170,32 @@ app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
     
     let ivrMenuText = '';
     if (selectedLanguage === 'cmn') {
-      ivrMenuText = '欢迎致电，';
+
+      if(cover_name)
+        ivrMenuText = `欢迎致电 ${cover_name}`;
+      else
+        ivrMenuText = '欢迎致电，';
+
       ivrSettings.forEach(setting => {
         ivrMenuText += `按 ${setting.digit}，${setting.content}，`;
       });
     } else if (selectedLanguage === 'en') {
-      ivrMenuText = 'Welcome, ';
+
+      if(cover_name)
+        ivrMenuText = `Welcome to ${cover_name}`;
+      else
+        ivrMenuText = 'Welcome, ';
+
       ivrSettings.forEach(setting => {
-        ivrMenuText += `Press ${setting.digit} for ${setting.content}, `;
+        ivrMenuText += `${setting.content}, please press ${setting.digit}.`;
       });
     } else if (selectedLanguage === 'ms') {
-      ivrMenuText = 'Selamat datang, ';
+
+      if(cover_name)
+        ivrMenuText = `Selamat datang ke ${cover_name}`;
+      else
+        ivrMenuText = 'Selamat datang, ';
+
       ivrSettings.forEach(setting => {
         ivrMenuText += `Tekan ${setting.digit} untuk ${setting.content}, `;
       });
@@ -284,6 +312,19 @@ app.post('/voice-response', (req, res) => {
     endConferenceOnExit: true
   });
   res.type('text/xml').send(twiml.toString());
+});
+
+app.post("/update-cover-name/:phone", verifyToken, async (req, res) => {
+  const { phone } = req.params;
+  const { cover_name } = req.body;
+
+  try {
+    await client.query("UPDATE phone_numbers SET cover_name = $1 WHERE phone_number = $2", [cover_name, phone]);
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Error updating cover name:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 // 截取号码设置

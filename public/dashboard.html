@@ -439,10 +439,27 @@
       }
     }
     
+    async function getCoverName(phone) {
+      try {
+        const response = await axios.get(`https://twilio-api-t328.onrender.com/get-cover-name/${phone}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching phone numbers:", error);
+        return [];
+      }
+    }
+
     async function createPhoneSection(phone) {
       let section = document.createElement("div");
       section.classList.add("section");
       section.id = `section-${phone}`;
+
+      let cover_name = getCoverName(phone);
 
       section.innerHTML = `
         <h2>${phone} Settings 
@@ -452,6 +469,11 @@
         <!-- Redirection Setup -->
         <div class="form-group">
           <label for="phone-number-redirection">Redirect To:</label>
+
+          <input id="cover-name-${phone}" type="text" class="btn" style="width: 150px; background:white; color:black; border:2px solid #ccc; box-shadow:none; margin-bottom:10px;" value="${cover_name}" disabled>
+          <button id="edit-cover-name${phone}" class="btn btn-info" style="margin-left: 10px;" onclick="editCoverName('${phone}')">Edit</button>
+          <button id="save-cover-name${phone}" class="btn btn-success" style="margin-left: 10px; display: none;" onclick="saveCoverName('${phone}')">Save</button>
+
           <div id="redirection-container-${phone}" style="display: flex; flex-direction: column;">
             <p>Loading...</p>
           </div>
@@ -699,6 +721,36 @@
         saveButton.style.display = 'none';
         editButton.style.display = 'inline-block';
       })
+    }
+
+    function editCoverName(phone) {
+      const coverInput = document.getElementById(`cover-name-${phone}`);
+      const editButton = document.getElementById(`edit-cover-name${phone}`);
+      const saveButton = document.getElementById(`save-cover-name${phone}`);
+
+      coverInput.disabled = false;
+      editButton.style.display = "none";
+      saveButton.style.display = 'inline-block';
+    }
+
+    function saveCoverName(phone) {
+      const coverInput = document.getElementById(`cover-name-${phone}`);
+      const editButton = document.getElementById(`edit-cover-name${phone}`);
+      const saveButton = document.getElementById(`save-cover-name${phone}`);
+
+      axios.post(`https://twilio-api-t328.onrender.com/phone-setting/${phone}`, {
+        cover_name: coverInput.value
+      }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+      })
+      .then(() => {
+        coverInput.disabled = true;
+        saveButton.style.display = "none";
+        editButton.style.display = "inline-block";
+      })
+      .catch(error => {
+        console.error("Error updating cover name:", error);
+      });
     }
 
     function logout() {
