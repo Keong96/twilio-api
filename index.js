@@ -177,7 +177,8 @@ app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
         ivrMenuText = '欢迎致电，<break time="1s"/>';
 
       ivrSettings.forEach(setting => {
-        ivrMenuText += `按 ${setting.digit}，${setting.content}，`;
+        if(setting.digit && setting.content && setting.redirect_to)
+          ivrMenuText += `按 ${setting.digit}，${setting.content}，`;
       });
     } else if (selectedLanguage === 'en') {
 
@@ -187,7 +188,8 @@ app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
         ivrMenuText = 'Welcome,  <break time="1s"/>';
 
       ivrSettings.forEach(setting => {
-        ivrMenuText += `${setting.content}, please press ${setting.digit}.`;
+        if(setting.digit && setting.content && setting.redirect_to)
+          ivrMenuText += `${setting.content}, please press ${setting.digit}.`;
       });
     } else if (selectedLanguage === 'ms') {
 
