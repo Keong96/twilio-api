@@ -469,14 +469,12 @@
         <!-- Redirection Setup -->
         <div class="form-group">
           <label for="phone-number-redirection">Redirect To:</label>
-
           <input id="cover-name-${phone}" type="text" class="btn" style="background:white; color:black; border:2px solid #ccc; box-shadow:none; margin-bottom:10px;" value="${cover_name}" disabled>
-          <button id="edit-cover-name${phone}" class="btn btn-info" style="margin-left: 10px;" onclick="editCoverName('${phone}')">Edit</button>
-          <button id="save-cover-name${phone}" class="btn btn-success" style="margin-left: 10px; display: none;" onclick="saveCoverName('${phone}')">Save</button>
-
           <div id="redirection-container-${phone}" style="display: flex; flex-direction: column;">
             <p>Loading...</p>
           </div>
+          <button id="edit-${phone}" class="btn btn-info" style="margin-left: 10px;" onclick="editRedirect('${phone}')">Edit</button>
+          <button id="save-${phone}" class="btn btn-success" style="margin-left: 10px; display: none;" onclick="saveRedirect('${phone}')">Save</button>
         </div>
 
         <!-- Call History Table -->
@@ -543,8 +541,6 @@
               &nbsp;&nbsp;
               <input id="redirection-number${setting.digit}" type="text" class="form-control" placeholder="Enter phone number" value="${setting.redirect_to || ''}" required disabled>
               &nbsp;&nbsp;
-              <button id="edit${setting.digit}" class="btn btn-info" style="margin-left: 10px;" onclick="editRedirect('section-${phone}', ${setting.digit})">Edit</button>
-              <button id="save${setting.digit}" class="btn btn-success" style="margin-left: 10px; display: none;" onclick="saveRedirect('section-${phone}', ${setting.digit})">Save</button>
             `;
 
             formGroup.appendChild(row);
@@ -667,90 +663,55 @@
       });
     }
 
-    function editRedirect(sectionId, number) {
-      const section = document.getElementById(sectionId);
-      const redirectInput = section.querySelector(`[id="redirect${number}"]`);
-      const descriptionInput = section.querySelector(`[id="redirection-description${number}"]`);
-      const phoneNumberInput = section.querySelector(`[id="redirection-number${number}"]`);
-      const editButton = section.querySelector(`[id="edit${number}"]`);
-      const saveButton = section.querySelector(`[id="save${number}"]`);
+    function editRedirect(phoneNumber) {
+      const coverInput = document.getElementById(`cover-name-${phoneNumber}`);
       
-      // Enable all inputs
-      redirectInput.disabled = false;
-      descriptionInput.disabled = false;
-      phoneNumberInput.disabled = false;
+      const section = document.getElementById(`section-${phoneNumber}`);
+
+      const editButton = document.getElementById(`edit-${phoneNumber}`);
+      const saveButton = document.getElementById(`save-${phoneNumber}`);
       
+      for (let i = 1; i <= 3; i++) {
+        let redirectInput = section.querySelector(`[id="redirect${i}"]`);
+        let descriptionInput = section.querySelector(`[id="redirection-description${i}"]`);
+        let phoneNumberInput = section.querySelector(`[id="redirection-number${i}"]`);
+
+        redirectInput.disabled = false;
+        descriptionInput.disabled = false;
+        phoneNumberInput.disabled = false;
+      }
+
       // Show the save button and hide the edit button
+      coverInput.disabled = false;
       editButton.style.display = 'none';
       saveButton.style.display = 'inline-block';
     }
 
-    function saveRedirect(sectionId, number) {
-      const section = document.getElementById(sectionId);
-      const phoneNumber = section.id.replace('section-', '');
-      const redirectInput = section.querySelector(`[id="redirect${number}"]`);
-      const descriptionInput = section.querySelector(`[id="redirection-description${number}"]`);
-      const phoneNumberInput = section.querySelector(`[id="redirection-number${number}"]`);
-      const editButton = section.querySelector(`[id="edit${number}"]`);
-      const saveButton = section.querySelector(`[id="save${number}"]`);
+    async function saveRedirect(phoneNumber) {
+      const coverInput = document.getElementById(`cover-name-${phoneNumber}`);
+      const section = document.getElementById(`section-${phoneNumber}`);
+      const editButton = document.getElementById(`edit-${phoneNumber}`);
+      const saveButton = document.getElementById(`save-${phoneNumber}`);
 
-      if (!redirectInput || !descriptionInput || !phoneNumberInput || !editButton || !saveButton) {
-        alert("One or more required elements are missing.");
-        return;
-      }
-
-      if (!/^[0-9]$/.test(redirectInput.value)) {
-        alert("Redirect number must be a single digit (0-9).");
-        redirectInput.value = "";
-        redirectInput.focus();
-        return;
-      }
-
-      axios.post(`https://twilio-api-t328.onrender.com/phone-setting/${phoneNumber}`, {
-        digit: redirectInput.value,
-        content: descriptionInput.value,
-        redirect_to: phoneNumberInput.value
-      }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-      })
-      .then(() => {
-        redirectInput.disabled = true;
-        descriptionInput.disabled = true;
-        phoneNumberInput.disabled = true;
-
-        saveButton.style.display = 'none';
-        editButton.style.display = 'inline-block';
-      })
-    }
-
-    function editCoverName(phone) {
-      const coverInput = document.getElementById(`cover-name-${phone}`);
-      const editButton = document.getElementById(`edit-cover-name${phone}`);
-      const saveButton = document.getElementById(`save-cover-name${phone}`);
-
-      coverInput.disabled = false;
-      editButton.style.display = "none";
-      saveButton.style.display = 'inline-block';
-    }
-
-    function saveCoverName(phone) {
-      const coverInput = document.getElementById(`cover-name-${phone}`);
-      const editButton = document.getElementById(`edit-cover-name${phone}`);
-      const saveButton = document.getElementById(`save-cover-name${phone}`);
-
-      axios.post(`https://twilio-api-t328.onrender.com/update-cover-name/${phone}`, {
+      await axios.post(`https://twilio-api-t328.onrender.com/update-cover-name/${phoneNumber}`, {
         cover_name: coverInput.value
       }, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
       })
-      .then(() => {
-        coverInput.disabled = true;
-        saveButton.style.display = "none";
-        editButton.style.display = "inline-block";
-      })
-      .catch(error => {
-        console.error("Error updating cover name:", error);
-      });
+
+      for (let i = 1; i <= 3; i++) {
+        let redirectInput = section.querySelector(`[id="redirect${i}"]`);
+        let descriptionInput = section.querySelector(`[id="redirection-description${i}"]`);
+        let phoneNumberInput = section.querySelector(`[id="redirection-number${i}"]`);
+
+        await axios.post(`https://twilio-api-t328.onrender.com/phone-setting/${phoneNumber}`, {
+          digit: redirectInput.value,
+          content: descriptionInput.value,
+          redirect_to: phoneNumberInput.value
+        }, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        });
+      }
     }
 
     function logout() {
