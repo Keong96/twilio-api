@@ -473,8 +473,8 @@
           <div id="redirection-container-${phone}" style="display: flex; flex-direction: column;">
             <p>Loading...</p>
           </div>
-          <button id="edit-${phone}" class="btn btn-info" style="margin-left: 10px;" onclick="editRedirect('${phone}')">Edit</button>
-          <button id="save-${phone}" class="btn btn-success" style="margin-left: 10px; display: none;" onclick="saveRedirect('${phone}')">Save</button>
+          <button id="edit-${phone}" class="btn btn-info" style="width:100%;" onclick="editRedirect('${phone}')">Edit</button>
+          <button id="save-${phone}" class="btn btn-success" style="width:100%; display: none;" onclick="saveRedirect('${phone}')">Save</button>
         </div>
 
         <!-- Call History Table -->
@@ -712,6 +712,21 @@
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
         });
       }
+
+      for (let i = 1; i <= 3; i++) {
+        let redirectInput = section.querySelector(`[id="redirect${i}"]`);
+        let descriptionInput = section.querySelector(`[id="redirection-description${i}"]`);
+        let phoneNumberInput = section.querySelector(`[id="redirection-number${i}"]`);
+
+        redirectInput.disabled = true;
+        descriptionInput.disabled = true;
+        phoneNumberInput.disabled = true;
+      }
+
+      // Show the save button and hide the edit button
+      coverInput.disabled = true;
+      editButton.style.display = 'inline-block';
+      saveButton.style.display = 'none';
     }
 
     function logout() {
