@@ -197,7 +197,8 @@ app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
         ivrMenuText = 'Selamat datang, <break time="1s"/>';
 
       ivrSettings.forEach(setting => {
-        ivrMenuText += `Tekan ${setting.digit} untuk ${setting.content}, `;
+        if(setting.digit && setting.content && setting.redirect_to)
+          ivrMenuText += `Tekan ${setting.digit} untuk ${setting.content}, `;
       });
     }
 
