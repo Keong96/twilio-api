@@ -172,9 +172,9 @@ app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
     if (selectedLanguage === 'cmn') {
 
       if(cover_name)
-        ivrMenuText = `欢迎致电 ${cover_name}`;
+        ivrMenuText = `欢迎致电 ${cover_name} <break time="1s"/>`;
       else
-        ivrMenuText = '欢迎致电，';
+        ivrMenuText = '欢迎致电，<break time="1s"/>';
 
       ivrSettings.forEach(setting => {
         ivrMenuText += `按 ${setting.digit}，${setting.content}，`;
@@ -182,9 +182,9 @@ app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
     } else if (selectedLanguage === 'en') {
 
       if(cover_name)
-        ivrMenuText = `Welcome to ${cover_name}`;
+        ivrMenuText = `Welcome to ${cover_name} <break time="1s"/>`;
       else
-        ivrMenuText = 'Welcome, ';
+        ivrMenuText = 'Welcome,  <break time="1s"/>';
 
       ivrSettings.forEach(setting => {
         ivrMenuText += `${setting.content}, please press ${setting.digit}.`;
@@ -192,9 +192,9 @@ app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
     } else if (selectedLanguage === 'ms') {
 
       if(cover_name)
-        ivrMenuText = `Selamat datang ke ${cover_name}`;
+        ivrMenuText = `Selamat datang ke ${cover_name} <break time="1s"/>`;
       else
-        ivrMenuText = 'Selamat datang, ';
+        ivrMenuText = 'Selamat datang, <break time="1s"/>';
 
       ivrSettings.forEach(setting => {
         ivrMenuText += `Tekan ${setting.digit} untuk ${setting.content}, `;
