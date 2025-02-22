@@ -446,8 +446,8 @@
             Authorization: `Bearer ${token}`
           }
         });
-        console.log(JSON.stringify(response));
-        return response;
+        
+        return response.data;
       } catch (error) {
         console.error("Error fetching phone numbers:", error);
         return [];
