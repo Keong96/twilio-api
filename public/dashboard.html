@@ -535,11 +535,11 @@
             row.style.marginBottom = "10px";
 
             row.innerHTML = `
-              <input id="redirect${setting.digit}" type="text" class="btn" style="width: 75px; background:white; color:black; border:2px solid #ccc; box-shadow:none; margin-bottom:10px;" value="${setting.digit}" disabled>
+              <input id="redirect${setting.digit || ""}" type="text" class="btn" style="width: 75px; background:white; color:black; border:2px solid #ccc; box-shadow:none; margin-bottom:10px;" value="${setting.digit || ""}" disabled>
               &nbsp;&nbsp;
-              <input id="redirection-description${setting.digit}" type="text" class="form-control" value="${setting.content}" required style="text-align: center; width:150px" disabled>
+              <input id="redirection-description${setting.digit || ""}" type="text" class="form-control" value="${setting.content || ""}" required style="text-align: center; width:150px" disabled>
               &nbsp;&nbsp;
-              <input id="redirection-number${setting.digit}" type="text" class="form-control" placeholder="Enter phone number" value="${setting.redirect_to || ''}" required disabled>
+              <input id="redirection-number${setting.digit || ""}" type="text" class="form-control" placeholder="Enter phone number" value="${setting.redirect_to || ''}" required disabled>
               &nbsp;&nbsp;
             `;
 
