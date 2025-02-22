@@ -127,7 +127,7 @@ app.get("/get-cover-name/:phoneNumber", verifyToken, async (req, res) => {
   const { phoneNumber } = req.params;
   try {
     const result = await client.query("SELECT cover_name FROM phone_numbers WHERE phone_number = $1", [phoneNumber]);
-    return res.status(200).send(result.rows[0].cover_name);
+    return res.status(200).json(result.rows[0].cover_name);
   } catch (error) {
     console.error("Error fetching cover name:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -340,7 +340,7 @@ app.post('/phone-setting/:phoneNumber', verifyToken, async (req, res) => {
   const phoneNumber = req.params.phoneNumber;
   const { digit, content, redirect_to } = req.body;
 
-  if (!phoneNumber || !digit || !content || !redirect_to) {
+  if (!phoneNumber || !digit) {
     return res.status(200).json({ error: "Missing required fields" });
   }
 
