@@ -317,6 +317,17 @@ app.post('/voice-response', (req, res) => {
   res.type('text/xml').send(twiml.toString());
 });
 
+app.post('/cancel-call', async (req, res) => {
+  const callSid = req.query.callSID;
+  try {
+    await twilio_client.calls(callSid).update({ status: 'canceled' });
+    res.status(200).send('Call canceled.');
+  } catch (error) {
+    console.error('Error canceling call:', error);
+    res.status(500).send('Error canceling call.');
+  }
+});
+
 app.post("/update-cover-name/:phone", verifyToken, async (req, res) => {
   const { phone } = req.params;
   const { cover_name } = req.body;

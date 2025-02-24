@@ -344,6 +344,7 @@
     const token = localStorage.getItem("token");
     let device;
     let activeConnection = null;
+    let callSID = null;
 
     if(!token)
     {
@@ -537,7 +538,7 @@
             row.innerHTML = `
               <input id="redirect${setting.digit || ""}" type="text" class="btn" style="width: 75px; background:white; color:black; border:2px solid #ccc; box-shadow:none; margin-bottom:10px;" value="${setting.digit || ""}" disabled>
               &nbsp;&nbsp;
-              <input id="redirection-description${setting.digit || ""}" type="text" class="form-control" value="${setting.content || ""}" required style="text-align: center; width:150px" disabled>
+              <input id="redirection-description${setting.digit || ""}" type="text" class="form-control" placeholder="Enter voice message" value="${setting.content || ""}" required style="text-align: center; width:150px" disabled>
               &nbsp;&nbsp;
               <input id="redirection-number${setting.digit || ""}" type="text" class="form-control" placeholder="Enter phone number" value="${setting.redirect_to || ''}" required disabled>
               &nbsp;&nbsp;
@@ -572,7 +573,10 @@
 
         loadingSpinner.style.display = "none";
 
-        if (response.data.callSid) {
+        if (response.data.callSid)
+        {
+          callSID = response.data.callSid;
+
           activeConnection = device.connect({ conference: 'MyConferenceRoom' });
           activeConnection.on("accept", () => {
             statusElement.innerText = `Calling ${callTo}`;
@@ -606,11 +610,23 @@
       }
     }
 
-    function hangUpCall() {
+    async function hangUpCall() {
       if (activeConnection) {
         activeConnection.disconnect();
       } else {
         device.disconnectAll();
+      }
+
+      if (callSID)
+      {
+        try {
+          await axios.post(`https://twilio-api-t328.onrender.com/cancel-call?callSID=${callSID}`);
+          console.log('Outbound call canceled.');
+          statusElement.innerText = `Call Canceled`;
+        } catch (error) {
+          console.error('Error canceling call:', error);
+        }
+        callSID = null;
       }
     }
 
