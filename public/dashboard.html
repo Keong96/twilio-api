@@ -561,6 +561,14 @@
       statusElement.innerText = "";
 
       try {
+        if (!device) {
+          await initTwilio();
+          await new Promise((resolve, reject) => {
+            device.on('ready', resolve);
+            device.on('error', reject);
+          });
+        }
+
         // Make API call to initiate the call
         const response = await axios.post(`https://twilio-api-t328.onrender.com/make-call`, {
           phoneNumber: phoneNumber,
@@ -611,6 +619,7 @@
     }
 
     async function hangUpCall() {
+      const statusElement = document.getElementById("make-call-status");
       if (activeConnection) {
         activeConnection.disconnect();
       } else {
