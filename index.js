@@ -292,11 +292,9 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
 app.post('/make-call', async (req, res) => {
   const phoneNumber = req.body.phoneNumber;
   const to = req.body.to;
-  const uniqueConference = `${phoneNumber}-${to}`;
-
   try {
     const call = await twilio_client.calls.create({
-      url: `https://twilio-api-t328.onrender.com/voice-response?roomName=${uniqueConference}`,
+      url: `https://twilio-api-t328.onrender.com/voice-response`,
       to: to,
       from: phoneNumber,
     });
@@ -309,10 +307,12 @@ app.post('/make-call', async (req, res) => {
 });
 
 app.post('/voice-response', (req, res) => {  
+  console.log(JSON.stringify(req.body));
+  
   const twiml = new twilio.twiml.VoiceResponse();
-  const conferenceRoom = req.query.roomName;
+  //const conferenceRoom = req.query.roomName;
 
-  twiml.dial().conference(conferenceRoom, {
+  twiml.dial().conference("TEST", {
     startConferenceOnEnter: true,
     endConferenceOnExit: true
   });
