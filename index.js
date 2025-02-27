@@ -312,7 +312,7 @@ app.post('/voice-response', (req, res) => {
   const twiml = new twilio.twiml.VoiceResponse();
   const conferenceRoom = req.query.roomName;
 
-  twiml.dial().conference("TEST-ROOM-2", {
+  twiml.dial().conference(conferenceRoom, {
     startConferenceOnEnter: true,
     endConferenceOnExit: true
   });
