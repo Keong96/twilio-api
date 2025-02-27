@@ -346,6 +346,21 @@
     let device;
     let activeConnection = null;
     let callSID = null;
+    let onHold = false;
+
+    let localStream; // Your microphone MediaStream
+    const holdMusicAudio = new Audio('https://demo.twilio.com/docs/classic.mp3');
+    holdMusicAudio.loop = true;
+
+    navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(stream => {
+      localStream = stream;
+      console.log("Microphone access granted.");
+      // You can now use localStream in your application.
+    })
+    .catch(error => {
+      console.error("Error accessing the microphone:", error);
+    });
 
     if(!token)
     {
@@ -626,7 +641,9 @@
     }
 
     async function toggleHold() {
-      
+      onHold = !onHold;
+      localStream.getAudioTracks().forEach(track => track.enabled = !onHold);
+      onHold ? holdMusicAudio.play() : holdMusicAudio.pause();
     }
 
     async function hangUpCall() {
