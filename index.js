@@ -291,7 +291,7 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
 app.post('/make-call', async (req, res) => {
   const phoneNumber = req.body.phoneNumber;
   const to = req.body.to;
-  const uniqueConference = `${phoneNumber}-${to}}`;
+  const uniqueConference = `${phoneNumber}-${to}`;
 
   try {
     const call = await twilio_client.calls.create({
