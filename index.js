@@ -345,7 +345,6 @@ app.post('/hold-participant', async (req, res) => {
 app.post('/unhold-participant', async (req, res) => {
   const conferenceName = req.body.conferenceName;
   try {
-
     const conferences = await twilio_client.conferences.list({ status: 'in-progress', limit: 100 });
     const matchedConference = conferences.find(conf => conf.friendlyName === conferenceName);
     const participants = await twilio_client.conferences(matchedConference.sid).participants.list({ limit: 20 });
@@ -365,7 +364,7 @@ app.post('/unhold-participant', async (req, res) => {
   }
 });
 
-app.post('/hold-music', (req, res) => {
+app.get('/hold-music', (req, res) => {
   const twiml = new twilio.twiml.VoiceResponse();
   twiml.play('https://www.bensound.com/bensound-music/bensound-tenderness.mp3', { loop: 0 });
   res.type('text/xml').send(twiml.toString());

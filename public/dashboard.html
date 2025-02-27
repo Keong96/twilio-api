@@ -600,12 +600,14 @@
             statusElement.innerText = `Call End`;
             document.getElementById("init-call-button").disabled = false;
             document.getElementById('toggle-hold-button').disabled = true;
+            document.getElementById('toggle-hold-button').innerHTML = "Hold"
             document.getElementById("hangup-call-button").disabled = true;
           });
           activeConnection.on("reject", () => {
             statusElement.innerText = `Call rejected by recipient`;
             document.getElementById("init-call-button").disabled = false;
             document.getElementById('toggle-hold-button').disabled = true;
+            document.getElementById('toggle-hold-button').innerHTML = "Hold"
             document.getElementById("hangup-call-button").disabled = true;
           });
           activeConnection.on("error", () => {
@@ -613,6 +615,7 @@
             console.log("Call error:", error);
             document.getElementById("init-call-button").disabled = false;
             document.getElementById('toggle-hold-button').disabled = true;
+            document.getElementById('toggle-hold-button').innerHTML = "Hold"
             document.getElementById("hangup-call-button").disabled = true;
           });
         } else {
