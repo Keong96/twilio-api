@@ -291,7 +291,7 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
 app.post('/make-call', async (req, res) => {
   const phoneNumber = req.body.phoneNumber;
   const to = req.body.to;
-  const uniqueConference = `Conf-${phoneNumber}-${to}-${new Date().getTime()}`;
+  const uniqueConference = `Conf-${new Date().getTime()}`;
   console.log(uniqueConference);
 
   try {
@@ -312,7 +312,7 @@ app.post('/voice-response', (req, res) => {
   const conferenceName = req.query.conference;
   const twiml = new twilio.twiml.VoiceResponse();
   console.log("voice ->"+conferenceName)
-  
+
   // When the recipient answers, they are joined to the conference.
   twiml.dial().conference(conferenceName, {
     startConferenceOnEnter: true,
