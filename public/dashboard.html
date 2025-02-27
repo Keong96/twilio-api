@@ -600,10 +600,7 @@
         if (response.data.callSid)
         {
           callSID = response.data.callSid;
-          const uniqueConference = `${response.data.uniqueConference}`;
-          activeConnection = device.connect({ conference: uniqueConference });
-          console.log('activeConnection initiated:', activeConnection);
-
+          activeConnection = device.connect({ conference: `${phoneNumber}-${callTo}` });
           activeConnection.on("accept", () => {
             statusElement.innerText = `Calling ${callTo}`;
             document.getElementById("init-call-button").disabled = true;
