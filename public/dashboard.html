@@ -346,9 +346,6 @@
     let device;
     let activeConnection = null;
     let callSID = null;
-    let onHold = false;
-    let currentConferenceSid = null;
-    let currentParticipantSid = null;
 
     if(!token)
     {
@@ -629,18 +626,7 @@
     }
 
     async function toggleHold() {
-      onHold = !onHold;
       
-      try {
-        await axios.post('https://twilio-api-t328.onrender.com/toggle-hold', {
-          conferenceSid: currentConferenceSid,
-          participantSid: currentParticipantSid,
-          hold: onHold
-        });
-        document.getElementById('toggle-hold-button').innerText = onHold ? 'Resume' : 'On Hold';
-      } catch (error) {
-        console.error('Error toggling hold:', error);
-      }
     }
 
     async function hangUpCall() {
@@ -661,8 +647,6 @@
           console.error('Error canceling call:', error);
         }
         callSID = null;
-        currentConferenceSid = null;
-        currentParticipantSid = null;
       }
     }
 

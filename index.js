@@ -292,7 +292,6 @@ app.post('/make-call', async (req, res) => {
   const phoneNumber = req.body.phoneNumber;
   const to = req.body.to;
   const uniqueConference = `Conf-${phoneNumber}-${to}-${new Date().getTime()}`;
-  
 
   try {
     const call = await twilio_client.calls.create({
@@ -301,23 +300,7 @@ app.post('/make-call', async (req, res) => {
       from: phoneNumber,
     });
 
-    let conferenceSid = null;
-    let participants = null;
-
-    const conferences = await twilio_client.conferences.list({ friendlyName: uniqueConference });
-    if (conferences.length > 0) {
-      conferenceSid = conferences[0].sid;
-      participants = await twilio_client.conferences(conferenceSid).participants.list();
-    }
-
-    return res.json({
-      message: 'Call initiated',
-      callSid: call.sid,
-      uniqueConference: uniqueConference,
-      conferenceSid: conferenceSid,
-      participants: participants
-    });
-
+    res.json({ message: 'Call initiated', callSid: call.sid, uniqueConference: uniqueConference});
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error initiating call', error: error.message });
@@ -345,31 +328,6 @@ app.post('/cancel-call', async (req, res) => {
     console.error('Error canceling call:', error);
     res.status(500).send('Error canceling call.');
   }
-});
-
-app.post('/toggle-hold', async (req, res) => {
-  const { conferenceSid, participantSid, hold } = req.body;
-  try {
-    const updateOptions = { hold: hold };
-    if (hold) {
-      updateOptions.holdUrl = 'https://twilio-api-t328.onrender.com/hold-music';
-    }
-    const participant = await twilio_client.conferences(conferenceSid)
-      .participants(participantSid)
-      .update(updateOptions);
-    res.status(200).json({ message: 'Hold toggled successfully' });
-  } catch (error) {
-    console.error('Error toggling hold:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/hold-music', (req, res) => {
-  const twiml = new twilio.twiml.VoiceResponse();
-  // Play hold music in a loop (0 means infinite)
-  twiml.play({ loop: 0 }, 'https://api.twilio.com/cowbell.mp3');
-  res.type('text/xml');
-  res.send(twiml.toString());
 });
 
 app.post("/update-cover-name/:phone", verifyToken, async (req, res) => {
