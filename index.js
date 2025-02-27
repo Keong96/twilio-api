@@ -308,7 +308,7 @@ app.post('/make-call', async (req, res) => {
 });
 
 app.post('/voice-response', (req, res) => {
-  const conferenceName = req.query.conference;
+  const conferenceName = req.query.conference || req.body.conference;
   const twiml = new twilio.twiml.VoiceResponse();
   console.log("voice-response ->"+conferenceName)
 
