@@ -601,6 +601,7 @@
         {
           callSID = response.data.callSid;
           const uniqueConference = `${response.data.uniqueConference}`;
+          console.log(uniqueConference);
           
           activeConnection = device.connect({ conference: uniqueConference });
           activeConnection.on("accept", () => {
