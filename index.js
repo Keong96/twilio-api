@@ -366,7 +366,7 @@ app.post('/unhold-participant', async (req, res) => {
 
 app.get('/hold-music', (req, res) => {
   const twiml = new twilio.twiml.VoiceResponse();
-  twiml.play('https://www.bensound.com/bensound-music/bensound-tenderness.mp3', { loop: 0 });
+  twiml.play('https://demo.twilio.com/docs/classic.mp3', { loop: 0 });
   res.type('text/xml').send(twiml.toString());
 });
 
