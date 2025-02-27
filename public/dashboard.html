@@ -302,7 +302,7 @@
             <input type="text" id="call-to" class="form-control" placeholder="Enter phone number" required>
           </div>
           <button id="init-call-button" type="button" onclick="initiateCall()" class="btn" style="background:#00ab00;">Call</button>
-          <button id="toggle-hold-button" type="button" onclick="toggleHold()" class="btn" style="background: yellow;" disabled>On Hold</button>
+          <button id="toggle-hold-button" type="button" onclick="toggleHold()" class="btn" style="background: orange;" disabled>Hold</button>
           <button id="hangup-call-button" type="button" onclick="hangUpCall()" class="btn" style="background: red;" disabled>Hang Up</button>
         </form>
         <p id="make-call-status"></p>
@@ -347,20 +347,7 @@
     let activeConnection = null;
     let callSID = null;
     let onHold = false;
-
-    let localStream; // Your microphone MediaStream
-    const holdMusicAudio = new Audio('https://www.bensound.com/bensound-music/bensound-tenderness.mp3');
-    holdMusicAudio.loop = true;
-
-    navigator.mediaDevices.getUserMedia({ audio: true })
-    .then(stream => {
-      localStream = stream;
-      console.log("Microphone access granted.");
-      // You can now use localStream in your application.
-    })
-    .catch(error => {
-      console.error("Error accessing the microphone:", error);
-    });
+    let currentPhoneNumber = "";
 
     if(!token)
     {
@@ -425,7 +412,7 @@
         });
 
         const data = response.data;
-
+        currentPhoneNumber = phoneNumber;
         device = new Twilio.Device(data.token, { logLevel: 1 });
 
         device.on("ready", () => console.log("✅ Twilio Device Ready"));
@@ -640,18 +627,16 @@
 
     async function toggleHold() {
       onHold = !onHold;
-      // This mutes/unmutes your mic:
-      localStream.getAudioTracks().forEach(track => track.enabled = !onHold);
 
-      if (onHold) {
-        // Reset and play from the start
-        holdMusicAudio.currentTime = 0;
-        holdMusicAudio.play();
-      } else {
-        // Stop and reset the hold music
-        holdMusicAudio.pause();
-        holdMusicAudio.currentTime = 0;
-      }
+      const endpoint = onHold ? '/hold-participant' : '/unhold-participant';
+      const response = await axios.post(`https://twilio-api-t328.onrender.com${endpoint}`, {
+        conferenceName: `ROOM-${currentPhoneNumber}`,
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      document.getElementById('toggle-hold-button').innerHTML = onHold ? "Unhold" : "Hold";
     }
 
     async function hangUpCall() {
@@ -673,6 +658,9 @@
         }
         callSID = null;
       }
+
+      document.getElementById('toggle-hold-button').innerHTML = "Hold"
+      document.getElementById('toggle-hold-button').disabled = true;
     }
 
     function fetchCallHistory(number, page = 1, limit = 10)

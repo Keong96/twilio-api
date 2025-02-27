@@ -307,7 +307,6 @@ app.post('/make-call', async (req, res) => {
 });
 
 app.post('/voice-response', (req, res) => {  
-
   const twiml = new twilio.twiml.VoiceResponse();
   const caller = req.body.Caller || '';
   const conferenceRoom = "ROOM-"+caller.replace(/^client:/, '');
@@ -316,6 +315,59 @@ app.post('/voice-response', (req, res) => {
     startConferenceOnEnter: true,
     endConferenceOnExit: true
   });
+  res.type('text/xml').send(twiml.toString());
+});
+
+app.post('/hold-participant', async (req, res) => {
+  const conferenceName = req.body.conferenceName;
+  try {
+
+    const conferences = await twilio_client.conferences.list({ status: 'in-progress', limit: 100 });
+    const matchedConference = conferences.find(conf => conf.friendlyName === conferenceName);
+    const participants = await twilio_client.conferences(matchedConference.sid).participants.list({ limit: 20 });
+
+    await Promise.all(participants.map(async (participant) => {
+      await twilio_client.conferences(matchedConference.sid)
+        .participants(participant.callSid)
+        .update({
+          hold: true,
+          holdUrl: 'https://twilio-api-t328.onrender.com/hold-music'
+        });
+    }));
+    
+    res.json({ message: 'Participant is now on hold' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/unhold-participant', async (req, res) => {
+  const conferenceName = req.body.conferenceName;
+  try {
+
+    const conferences = await twilio_client.conferences.list({ status: 'in-progress', limit: 100 });
+    const matchedConference = conferences.find(conf => conf.friendlyName === conferenceName);
+    const participants = await twilio_client.conferences(matchedConference.sid).participants.list({ limit: 20 });
+
+    await Promise.all(participants.map(async (participant) => {
+      await twilio_client.conferences(matchedConference.sid)
+        .participants(participant.callSid)
+        .update({
+          hold: false
+        });
+    }));
+    
+    res.json({ message: 'Participant is now on hold' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/hold-music', (req, res) => {
+  const twiml = new twilio.twiml.VoiceResponse();
+  twiml.play('https://www.bensound.com/bensound-music/bensound-tenderness.mp3', { loop: 0 });
   res.type('text/xml').send(twiml.toString());
 });
 
