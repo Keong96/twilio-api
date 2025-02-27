@@ -601,11 +601,10 @@
         {
           callSID = response.data.callSid;
           const uniqueConference = `${response.data.uniqueConference}`;
-          activeConnection = device.connect({ params: { conference: uniqueConference } });
+          activeConnection = device.connect({ conference: uniqueConference });
           console.log('activeConnection initiated:', activeConnection);
 
           activeConnection.on("accept", () => {
-            console.log("Custom parameters:", JSON.stringify(activeConnection.customParameters.get("params")));
             statusElement.innerText = `Calling ${callTo}`;
             document.getElementById("init-call-button").disabled = true;
             document.getElementById('toggle-hold-button').disabled = false;
