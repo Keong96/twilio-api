@@ -17,6 +17,7 @@ const TWILIO_API_SECRET = process.env.TWILIO_API_SECRET;
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
 const twilio_client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
@@ -295,7 +296,7 @@ app.post('/make-call', async (req, res) => {
 
   try {
     const call = await twilio_client.calls.create({
-      url: `https://twilio-api-t328.onrender.com/voice-response?conference=${uniqueConference}`,
+      url: `https://twilio-api-t328.onrender.com/voice-response?roomName=${uniqueConference}`,
       to: to,
       from: phoneNumber,
     });
@@ -307,15 +308,11 @@ app.post('/make-call', async (req, res) => {
   }
 });
 
-app.post('/voice-response', (req, res) => {
-  console.log(JSON.stringify(req.query));
-  console.log(JSON.stringify(req.params));
-  console.log(JSON.stringify(req.body));
-  
+app.post('/voice-response', (req, res) => {  
   const twiml = new twilio.twiml.VoiceResponse();
+  const conferenceRoom = req.query.roomName;
 
-  // When the recipient answers, they are joined to the conference.
-  twiml.dial().conference("TEST-ROOM-1", {
+  twiml.dial().conference(conferenceRoom, {
     startConferenceOnEnter: true,
     endConferenceOnExit: true
   });

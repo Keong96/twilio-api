@@ -600,7 +600,7 @@
         if (response.data.callSid)
         {
           callSID = response.data.callSid;
-          activeConnection = device.connect({ roomName: `TEST_ROOM_1` });
+          activeConnection = device.connect({ roomName: `${phoneNumber}-${callTo}` });
           activeConnection.on("accept", () => {
             statusElement.innerText = `Calling ${callTo}`;
             document.getElementById("init-call-button").disabled = true;
