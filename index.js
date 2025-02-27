@@ -292,7 +292,6 @@ app.post('/make-call', async (req, res) => {
   const phoneNumber = req.body.phoneNumber;
   const to = req.body.to;
   const uniqueConference = `Conf-${new Date().getTime()}`;
-  console.log(uniqueConference);
 
   try {
     const call = await twilio_client.calls.create({
