@@ -349,7 +349,7 @@
     let onHold = false;
 
     let localStream; // Your microphone MediaStream
-    const holdMusicAudio = new Audio('https://demo.twilio.com/docs/classic.mp3');
+    const holdMusicAudio = new Audio('https://www.bensound.com/bensound-music/bensound-tenderness.mp3');
     holdMusicAudio.loop = true;
 
     navigator.mediaDevices.getUserMedia({ audio: true })
@@ -640,8 +640,18 @@
 
     async function toggleHold() {
       onHold = !onHold;
+      // This mutes/unmutes your mic:
       localStream.getAudioTracks().forEach(track => track.enabled = !onHold);
-      onHold ? holdMusicAudio.play() : holdMusicAudio.pause();
+
+      if (onHold) {
+        // Reset and play from the start
+        holdMusicAudio.currentTime = 0;
+        holdMusicAudio.play();
+      } else {
+        // Stop and reset the hold music
+        holdMusicAudio.pause();
+        holdMusicAudio.currentTime = 0;
+      }
     }
 
     async function hangUpCall() {
