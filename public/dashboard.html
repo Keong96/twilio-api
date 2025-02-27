@@ -424,7 +424,7 @@
           const response = await axios.post('https://twilio-api-t328.onrender.com/get-token');
           const data = response.data;
 
-          device = new Twilio.Device(data.token, { logLevel: 1 });
+          device = new Twilio.Device(data.token, { logLevel: "debug" });
 
           device.on("ready", () => console.log("✅ Twilio Device Ready"));
           device.on("error", error => console.error("❌ Twilio Error:", error));
@@ -602,7 +602,10 @@
           callSID = response.data.callSid;
           const uniqueConference = `${response.data.uniqueConference}`;
           activeConnection = device.connect({ params: { conference: uniqueConference } });
+          console.log('activeConnection initiated:', activeConnection);
+
           activeConnection.on("accept", () => {
+            console.log('Connection accepted. Params:', activeConnection.parameters);
             statusElement.innerText = `Calling ${callTo}`;
             document.getElementById("init-call-button").disabled = true;
             document.getElementById('toggle-hold-button').disabled = false;
