@@ -293,7 +293,7 @@ app.post('/make-call', async (req, res) => {
   const to = req.body.to;
   const uniqueConference = `Conf-${phoneNumber}-${to}-${new Date().getTime()}`;
   console.log(uniqueConference);
-  
+
   try {
     const call = await twilio_client.calls.create({
       url: `https://twilio-api-t328.onrender.com/voice-response?conference=${uniqueConference}`,
@@ -311,7 +311,8 @@ app.post('/make-call', async (req, res) => {
 app.post('/voice-response', (req, res) => {
   const conferenceName = req.query.conference;
   const twiml = new twilio.twiml.VoiceResponse();
-
+  console.log("voice ->"+conferenceName)
+  
   // When the recipient answers, they are joined to the conference.
   twiml.dial().conference(conferenceName, {
     startConferenceOnEnter: true,
