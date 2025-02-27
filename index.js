@@ -292,6 +292,7 @@ app.post('/make-call', async (req, res) => {
   const phoneNumber = req.body.phoneNumber;
   const to = req.body.to;
   const uniqueConference = `Conf-${phoneNumber}-${to}-${new Date().getTime()}`;
+  
 
   try {
     const call = await twilio_client.calls.create({
@@ -300,13 +301,23 @@ app.post('/make-call', async (req, res) => {
       from: phoneNumber,
     });
 
-    const conferences = await twilio_client.conferences.list({ friendlyName: uniqueConference });
-      if (conferences.length > 0) {
-        const conferenceSid = conferences[0].sid;
-        const participants = await twilio_client.conferences(conferenceSid).participants.list();
-      }
+    let conferenceSid = null;
+    let participants = null;
 
-    res.json({ message: 'Call initiated', callSid: call.sid, uniqueConference: uniqueConference, conferenceSid: conferenceSid, participants: participants});
+    const conferences = await twilio_client.conferences.list({ friendlyName: uniqueConference });
+    if (conferences.length > 0) {
+      conferenceSid = conferences[0].sid;
+      participants = await twilio_client.conferences(conferenceSid).participants.list();
+    }
+
+    return res.json({
+      message: 'Call initiated',
+      callSid: call.sid,
+      uniqueConference: uniqueConference,
+      conferenceSid: conferenceSid,
+      participants: participants
+    });
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error initiating call', error: error.message });
