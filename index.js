@@ -308,7 +308,10 @@ app.post('/make-call', async (req, res) => {
 });
 
 app.post('/voice-response', (req, res) => {
-  const conferenceName = req.body.conference || req.query.conference;
+  console.log(JSON.stringify(req.query));
+  console.log(JSON.stringify(req.params));
+  console.log(JSON.stringify(req.body));
+  
   const twiml = new twilio.twiml.VoiceResponse();
 
   // When the recipient answers, they are joined to the conference.
