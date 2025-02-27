@@ -291,15 +291,16 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
 app.post('/make-call', async (req, res) => {
   const phoneNumber = req.body.phoneNumber;
   const to = req.body.to;
+  const uniqueConference = `Conf-${phoneNumber}-${to}-${new Date().getTime()}`;
 
   try {
     const call = await twilio_client.calls.create({
-      url: `https://twilio-api-t328.onrender.com/voice-response`,
+      url: `https://twilio-api-t328.onrender.com/voice-response?conference=${uniqueConference}`,
       to: to,
       from: phoneNumber,
     });
 
-    res.json({ message: 'Call initiated', callSid: call.sid });
+    res.json({ message: 'Call initiated', callSid: call.sid, uniqueConference: uniqueConference});
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error initiating call', error: error.message });
@@ -307,10 +308,11 @@ app.post('/make-call', async (req, res) => {
 });
 
 app.post('/voice-response', (req, res) => {
+  const conferenceName = req.query.conference;
   const twiml = new twilio.twiml.VoiceResponse();
 
   // When the recipient answers, they are joined to the conference.
-  twiml.dial().conference('MyConferenceRoom', {
+  twiml.dial().conference(conferenceName, {
     startConferenceOnEnter: true,
     endConferenceOnExit: true
   });
