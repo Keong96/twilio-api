@@ -312,7 +312,7 @@ app.post('/voice-response', (req, res) => {
   const twiml = new twilio.twiml.VoiceResponse();
 
   // When the recipient answers, they are joined to the conference.
-  twiml.dial().conference(conferenceName, {
+  twiml.dial().conference("TEST-ROOM-1", {
     startConferenceOnEnter: true,
     endConferenceOnExit: true
   });
