@@ -366,7 +366,7 @@ app.post('/unhold-participant', async (req, res) => {
 
 app.get('/hold-music', (req, res) => {
   const twiml = new twilio.twiml.VoiceResponse();
-  twiml.play('https://demo.twilio.com/docs/classic.mp3', { loop: 0 });
+  twiml.play('http://com.twilio.music.soft-rock.s3.amazonaws.com/_ghost_-_promo_2_sample_pack.mp3', { loop: 0 });
   res.type('text/xml').send(twiml.toString());
 });
 
