@@ -600,7 +600,7 @@
         if (response.data.callSid)
         {
           callSID = response.data.callSid;
-          activeConnection = device.connect({ conference: `abcabcabc` });
+          activeConnection = device.connect();
           activeConnection.on("accept", () => {
             statusElement.innerText = `Calling ${callTo}`;
             document.getElementById("init-call-button").disabled = true;
