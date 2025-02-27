@@ -302,6 +302,7 @@
             <input type="text" id="call-to" class="form-control" placeholder="Enter phone number" required>
           </div>
           <button id="init-call-button" type="button" onclick="initiateCall()" class="btn" style="background:#00ab00;">Call</button>
+          <button id="toggle-hold-button" type="button" onclick="toggleHold()" class="btn" style="background: yellow;" disabled>On Hold</button>
           <button id="hangup-call-button" type="button" onclick="hangUpCall()" class="btn" style="background: red;" disabled>Hang Up</button>
         </form>
         <p id="make-call-status"></p>
@@ -345,6 +346,9 @@
     let device;
     let activeConnection = null;
     let callSID = null;
+    let onHold = false;
+    let currentConferenceSid = null;
+    let currentParticipantSid = null;
 
     if(!token)
     {
@@ -585,30 +589,35 @@
         {
           callSID = response.data.callSid;
           const uniqueConference = `${response.data.uniqueConference}`;
+          currentConferenceSid = `${response.data.currentConferenceSid}`;
+          currentParticipantSid = `${response.data.currentParticipantSid}`;
           
           activeConnection = device.connect({ conference: uniqueConference });
           activeConnection.on("accept", () => {
             statusElement.innerText = `Calling ${callTo}`;
             document.getElementById("init-call-button").disabled = true;
+            document.getElementById('toggle-hold-button').disabled = false;
             document.getElementById("hangup-call-button").disabled = false;
           });
           activeConnection.on("disconnect", () => {
             statusElement.innerText = `Call End`;
             document.getElementById("init-call-button").disabled = false;
+            document.getElementById('toggle-hold-button').disabled = true;
             document.getElementById("hangup-call-button").disabled = true;
           });
           activeConnection.on("reject", () => {
             statusElement.innerText = `Call rejected by recipient`;
             document.getElementById("init-call-button").disabled = false;
+            document.getElementById('toggle-hold-button').disabled = true;
             document.getElementById("hangup-call-button").disabled = true;
           });
           activeConnection.on("error", () => {
             statusElement.innerText = `Error`;
             console.log("Call error:", error);
             document.getElementById("init-call-button").disabled = false;
+            document.getElementById('toggle-hold-button').disabled = true;
             document.getElementById("hangup-call-button").disabled = true;
           });
-
         } else {
           statusElement.innerText = "Call initiated, but no Call SID received.";
         }
@@ -616,6 +625,21 @@
         // Handle errors properly
         loadingSpinner.style.display = "none";
         statusElement.innerText = `Error: ${error.response?.data?.message || error.message}`;
+      }
+    }
+
+    async function toggleHold() {
+      onHold = !onHold;
+      
+      try {
+        await axios.post('https://twilio-api-t328.onrender.com/toggle-hold', {
+          conferenceSid: currentConferenceSid,
+          participantSid: currentParticipantSid,
+          hold: onHold
+        });
+        document.getElementById('toggle-hold-button').innerText = onHold ? 'Resume' : 'On Hold';
+      } catch (error) {
+        console.error('Error toggling hold:', error);
       }
     }
 
@@ -637,6 +661,8 @@
           console.error('Error canceling call:', error);
         }
         callSID = null;
+        currentConferenceSid = null;
+        currentParticipantSid = null;
       }
     }
 
