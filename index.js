@@ -313,7 +313,8 @@ app.post('/voice-response', (req, res) => {
 
   twiml.dial().conference(conferenceRoom, {
     startConferenceOnEnter: true,
-    endConferenceOnExit: true
+    endConferenceOnExit: true,
+    maxParticipants: 2
   });
   res.type('text/xml').send(twiml.toString());
 });
