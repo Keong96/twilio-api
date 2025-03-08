@@ -574,9 +574,20 @@ app.get('/bill/:phoneNumber', async (req, res) => {
   const startTimeBefore = new Date(year, month, 1);
 
   try {
-    const [outboundCalls, inboundCalls] = await Promise.all([
+    const [
+      outboundPlain,
+      outboundClient,
+      inboundPlain,
+      inboundClient
+    ] = await Promise.all([
       twilio_client.calls.list({
         to: phoneNumber,
+        startTimeAfter: startTimeAfter,
+        startTimeBefore: startTimeBefore,
+        limit: 1000
+      }),
+      twilio_client.calls.list({
+        to: `client:${phoneNumber}`,
         startTimeAfter: startTimeAfter,
         startTimeBefore: startTimeBefore,
         limit: 1000
@@ -586,10 +597,16 @@ app.get('/bill/:phoneNumber', async (req, res) => {
         startTimeAfter: startTimeAfter,
         startTimeBefore: startTimeBefore,
         limit: 1000
+      }),
+      twilio_client.calls.list({
+        from: `client:${phoneNumber}`,
+        startTimeAfter: startTimeAfter,
+        startTimeBefore: startTimeBefore,
+        limit: 1000
       })
     ]);
 
-    const allCalls = [...outboundCalls, ...inboundCalls];
+    const allCalls = [...outboundPlain, ...outboundClient, ...inboundPlain, ...inboundClient];
 
     allCalls.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
@@ -606,12 +623,13 @@ app.get('/bill/:phoneNumber', async (req, res) => {
 
     // Calculate the total cost.
     const totalCost = mappedCalls.reduce((acc, call) => acc + call.cost, 0);
+    const totalCostFormatted = Number(totalCost.toFixed(2));
 
     res.json({
       status: true,
       message: `Call history for ${phoneNumber} for ${month}/${year} fetched successfully.`,
       data: mappedCalls,
-      totalCost: totalCost
+      totalCost: totalCostFormatted
     });
   } catch (error) {
     console.error('Error fetching call history:', error);
