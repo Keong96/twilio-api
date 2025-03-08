@@ -558,6 +558,71 @@ app.post('/change-password', verifyToken, async (req, res) => {
   }
 });
 
+pp.get('/bill/:phoneNumber', verifyToken, async (req, res) => {
+  const phoneNumber = req.params.phoneNumber;
+  const month = parseInt(req.query.month);
+  const year = parseInt(req.query.year);
+
+  if (!month || !year) {
+    return res.status(400).json({
+      status: false,
+      message: 'Please provide both month and year as query parameters.'
+    });
+  }
+
+  const startTimeAfter = new Date(year, month - 1, 1);
+  const startTimeBefore = new Date(year, month, 1);
+
+  try {
+    const [outboundCalls, inboundCalls] = await Promise.all([
+      twilio_client.calls.list({
+        to: phoneNumber,
+        startTimeAfter: startTimeAfter,
+        startTimeBefore: startTimeBefore,
+        limit: 1000
+      }),
+      twilio_client.calls.list({
+        from: phoneNumber,
+        startTimeAfter: startTimeAfter,
+        startTimeBefore: startTimeBefore,
+        limit: 1000
+      })
+    ]);
+
+    const allCalls = [...outboundCalls, ...inboundCalls];
+
+    allCalls.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+
+    const mappedCalls = allCalls.map(call => ({
+      sid: call.sid,
+      status: call.status,
+      datetime: call.startTime,
+      callDuration: call.duration,
+      direction: call.direction,
+      from: call.from,
+      to: call.to,
+      cost: call.price ? parseFloat(call.price) : 0
+    }));
+
+    // Calculate the total cost.
+    const totalCost = mappedCalls.reduce((acc, call) => acc + call.cost, 0);
+
+    res.json({
+      status: true,
+      message: `Call history for ${phoneNumber} for ${month}/${year} fetched successfully.`,
+      data: mappedCalls,
+      totalCost: totalCost
+    });
+  } catch (error) {
+    console.error('Error fetching call history:', error);
+    res.status(500).json({
+      status: false,
+      message: 'Error fetching call history',
+      error: error.message
+    });
+  }
+});
+
 // 啟動伺服器
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
