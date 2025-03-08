@@ -306,10 +306,39 @@ app.post('/make-call', async (req, res) => {
   }
 });
 
-app.post('/voice-response', (req, res) => {  
+app.post('/voice-response', async (req, res) => {  
   const twiml = new twilio.twiml.VoiceResponse();
   const caller = req.body.Caller || '';
   const conferenceRoom = "ROOM-"+caller.replace(/^client:/, '');
+
+  try {
+    const conferences = await twilio_client.conferences.list({
+      friendlyName: conferenceRoom,
+      status: 'in-progress'
+    });
+
+    if (conferences.length > 0) {
+      const activeConference = conferences[0];
+      const participants = await twilio_client.conferences(activeConference.sid)
+        .participants
+        .list();
+
+      if (participants.length >= 2) {
+        twiml.reject();
+        return res.type('text/xml').send(twiml.toString());
+      }
+      
+      const duplicate = participants.find(p => p.callSid === req.body.CallSid);
+      if (duplicate) {
+        twiml.reject();
+        return res.type('text/xml').send(twiml.toString());
+      }
+    }
+  } catch (error) {
+    console.error("Error checking active conference:", error);
+    twiml.reject();
+    return res.type('text/xml').send(twiml.toString());
+  }
 
   twiml.dial().conference(conferenceRoom, {
     startConferenceOnEnter: true,
