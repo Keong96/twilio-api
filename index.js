@@ -558,7 +558,7 @@ app.post('/change-password', verifyToken, async (req, res) => {
   }
 });
 
-pp.get('/bill/:phoneNumber', verifyToken, async (req, res) => {
+app.get('/bill/:phoneNumber', verifyToken, async (req, res) => {
   const phoneNumber = req.params.phoneNumber;
   const month = parseInt(req.query.month);
   const year = parseInt(req.query.year);
