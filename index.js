@@ -3,6 +3,7 @@ const twilio = require('twilio');
 const jwt = require("jsonwebtoken");
 const bodyParser = require("body-parser");
 const { Client } = require('pg');
+const { Parser } = require('json2csv');
 require('dotenv').config();
 const AccessToken = twilio.jwt.AccessToken;
 const VoiceGrant = AccessToken.VoiceGrant;
@@ -558,7 +559,7 @@ app.post('/change-password', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/bill/:phoneNumber', async (req, res) => {
+app.get('/export-call-history/:phoneNumber', async (req, res) => {
   const phoneNumber = req.params.phoneNumber;
   const month = parseInt(req.query.month);
   const year = parseInt(req.query.year);
@@ -610,27 +611,42 @@ app.get('/bill/:phoneNumber', async (req, res) => {
 
     allCalls.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
-    const mappedCalls = allCalls.map(call => ({
-      sid: call.sid,
-      status: call.status,
-      datetime: call.startTime,
-      callDuration: call.duration,
-      direction: call.direction,
-      from: call.from,
-      to: call.to,
-      cost: call.price ? parseFloat(call.price) : 0
-    }));
+    const mappedCalls = allCalls.map(call => {
+      const duration = call.duration ? parseFloat(call.duration) : 0;
+      let computedCost = 0;
+      if (call.status === "completed") {
+        computedCost = 0.06 + (Math.ceil(duration / 60) * 0.06);
+      }
+      return {
+        sid: call.sid,
+        status: call.status,
+        datetime: call.startTime,
+        callDuration: call.duration,
+        direction: call.direction,
+        from: call.from,
+        to: call.to,
+        cost: computedCost
+      };
+    });
 
     // Calculate the total cost.
     const totalCost = mappedCalls.reduce((acc, call) => acc + call.cost, 0);
     const totalCostFormatted = Number(totalCost.toFixed(2));
 
-    res.json({
-      status: true,
-      message: `Call history for ${phoneNumber} for ${month}/${year} fetched successfully.`,
-      data: mappedCalls,
-      totalCost: totalCostFormatted
-    });
+    const fields = ['sid', 'status', 'datetime', 'callDuration', 'direction', 'from', 'to', 'cost'];
+    const json2csvParser = new Parser({ fields });
+    const csv = json2csvParser.parse(mappedCalls);
+    
+    res.header('Content-Type', 'text/csv');
+    res.attachment(`call_history_${phoneNumber}.csv`);
+    res.send(csv);
+
+    // res.json({
+    //   status: true,
+    //   message: `Call history for ${phoneNumber} for ${month}/${year} fetched successfully.`,
+    //   data: mappedCalls,
+    //   totalCost: totalCostFormatted
+    // });
   } catch (error) {
     console.error('Error fetching call history:', error);
     res.status(500).json({
