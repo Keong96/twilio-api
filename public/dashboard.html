@@ -646,6 +646,7 @@
       const statusElement = document.getElementById("make-call-status");
       if (activeConnection) {
         activeConnection.disconnect();
+        activeConnection = null;
       } else {
         device.disconnectAll();
       }

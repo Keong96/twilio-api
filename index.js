@@ -621,7 +621,7 @@ app.get('/export-call-history/:phoneNumber', async (req, res) => {
         sid: call.sid,
         status: call.status,
         datetime: call.startTime,
-        callDuration: call.duration,
+        duration: call.duration,
         direction: call.direction,
         from: call.from,
         to: call.to,
@@ -629,11 +629,7 @@ app.get('/export-call-history/:phoneNumber', async (req, res) => {
       };
     });
 
-    // Calculate the total cost.
-    const totalCost = mappedCalls.reduce((acc, call) => acc + call.cost, 0);
-    const totalCostFormatted = Number(totalCost.toFixed(2));
-
-    const fields = ['sid', 'status', 'datetime', 'callDuration', 'direction', 'from', 'to', 'cost'];
+    const fields = ['sid', 'status', 'datetime', 'duration', 'direction', 'from', 'to', 'cost'];
     const json2csvParser = new Parser({ fields });
     const csv = json2csvParser.parse(mappedCalls);
     
