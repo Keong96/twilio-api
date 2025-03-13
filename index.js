@@ -344,7 +344,6 @@ app.post('/voice-response', async (req, res) => {
   twiml.dial().conference(conferenceRoom, {
     startConferenceOnEnter: true,
     endConferenceOnExit: true,
-    maxParticipants: 2
   });
   res.type('text/xml').send(twiml.toString());
 });
