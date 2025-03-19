@@ -403,13 +403,23 @@ app.get('/hold-music', (req, res) => {
 
 app.post('/cancel-call', async (req, res) => {
   const callSid = req.query.callSID;
-  try {
-    await twilio_client.calls(callSid).update({ status: 'canceled' });
-    res.status(200).send('Call canceled.');
-  } catch (error) {
-    console.error('Error canceling call:', error);
-    res.status(500).send('Error canceling call.');
+
+  const call = await twilio_client.calls(callSid).fetch()
+  const caller = call.from.replace(/^client:/, '')
+
+  await twilio_client.calls(callSid).update({ status: 'canceled' });
+
+  const conferenceRoom = 'ROOM-' + caller
+  const conferences = await twilio_client.conferences.list({
+    friendlyName: conferenceRoom,
+    status: 'in-progress'
+  })
+
+  if (conferences.length > 0) {
+    await twilio_client.conferences(conferences[0].sid).update({ status: 'completed' })
   }
+
+  res.status(200).send('Call canceled.');
 });
 
 app.post("/update-cover-name/:phone", verifyToken, async (req, res) => {
