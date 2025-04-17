@@ -120,7 +120,7 @@ app.post('/login', async (req, res) => {
 });
 
 app.get('/phone-numbers', verifyToken, async(req, res) => {
-  const result = await client.query('SELECT phone_number FROM phone_numbers WHERE user_id = $1', [req.user.userId]);
+  const result = await client.query('SELECT phone_number FROM phone_numbers WHERE user_id = $1 AND deleted_at IS NULL', [req.user.userId]);
   const phoneNumbers = result.rows.map(row => row.phone_number);
   return res.status(200).json(phoneNumbers);
 });
