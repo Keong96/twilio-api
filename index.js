@@ -410,26 +410,17 @@ app.post('/cancel-call', async (req, res) => {
   await twilio_client.calls(callSid).update({ status: 'canceled' });
 
   const conferenceRoom = 'ROOM-' + caller
+  const conferences = await twilio_client.conferences.list({
+    friendlyName: conferenceRoom,
+    status: 'in-progress'
+  })
 
-  const conference = await waitForConference(twilio_client, conferenceRoom);
-  if (conference) {
-    await twilio_client.conferences(conference.sid).update({ status: 'completed' });
+  if (conferences.length > 0) {
+    await twilio_client.conferences(conferences[0].sid).update({ status: 'completed' })
   }
 
   res.status(200).send('Call canceled.');
 });
-
-async function waitForConference(client, friendlyName, maxRetries = 5, delayMs = 1000) {
-  for (let i = 0; i < maxRetries; i++) {
-    const list = await client.conferences.list({
-      friendlyName,
-      status: 'in-progress'
-    });
-    if (list.length > 0) return list[0];
-    await new Promise(r => setTimeout(r, delayMs));
-  }
-  return null;
-}
 
 app.post("/update-cover-name/:phone", verifyToken, async (req, res) => {
   const { phone } = req.params;
