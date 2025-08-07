@@ -267,7 +267,7 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
       if (result.rows[0].cover_number) {
         dialOptions.callerId = phoneNumber;
       }
-
+      console.log('Redirecting to:', settings.redirect_to);
       response.dial(dialOptions, settings.redirect_to);
       
     } else {
