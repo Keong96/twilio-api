@@ -415,7 +415,7 @@
         currentPhoneNumber = phoneNumber;
         device = new Twilio.Device(data.token, { logLevel: 1 });
         device.register();
-        
+
         device.on("ready", () => console.log("✅ Twilio Device Ready"));
         device.on("error", error => console.error("❌ Twilio Error:", error));
 
@@ -590,7 +590,7 @@
         if (response.data.callSid)
         {
           callSID = response.data.callSid;
-          activeConnection = device.connect({});
+          activeConnection = await device.connect({});
           activeConnection.on("accept", () => {
             statusElement.innerText = `Calling ${callTo}`;
             document.getElementById("init-call-button").disabled = true;
