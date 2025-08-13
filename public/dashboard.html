@@ -403,7 +403,7 @@
       logoutLink.onclick = logout;
 
       sidebarNav.appendChild(logoutLink);
-      });
+    });
 
     async function initTwilio(phoneNumber) {
       try {
@@ -414,7 +414,8 @@
         const data = response.data;
         currentPhoneNumber = phoneNumber;
         device = new Twilio.Device(data.token, { logLevel: 1 });
-
+        device.register();
+        
         device.on("ready", () => console.log("✅ Twilio Device Ready"));
         device.on("error", error => console.error("❌ Twilio Error:", error));
 
