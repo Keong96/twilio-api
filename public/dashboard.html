@@ -407,28 +407,49 @@
       });
 
     async function initTwilio(phoneNumber) {
-    try {
-      const response = await axios.post('https://twilio-api-t328.onrender.com/get-token', { phoneNumber });
-      const token = response.data.token;
-      currentPhoneNumber = phoneNumber;
+      return new Promise(async (resolve, reject) => {
+        try {
+          const response = await axios.post('https://twilio-api-t328.onrender.com/get-token', {
+            phoneNumber: phoneNumber
+          });
 
-      // v2 init (logLevel string recommended)
-      device = new Twilio.Device(token, { logLevel: 'info' });
+          const data = response.data;
+          currentPhoneNumber = phoneNumber;
 
-      device.on('ready', () => console.log('✅ Twilio Device Ready'));
-      device.on('error', error => console.error('❌ Twilio Error:', error));
+          // create device
+          device = new Twilio.Device(data.token, { logLevel: 'info' });
 
-      // incoming: rename connection -> call
-      device.on('incoming', (call) => {
-        console.log('📞 Incoming call from', call.parameters?.From || 'unknown');
-        call.accept();
-        console.log('✅ Call accepted!');
+          // events
+          device.on('ready', () => {
+            console.log('✅ Twilio Device Ready');
+            resolve(device);
+          });
+
+          device.on('error', (err) => {
+            console.error('❌ Twilio Error:', err);
+            reject(err);
+          });
+
+          device.on('incoming', (call) => {
+            console.log('📞 Incoming call from Twilio!');
+            try { call.accept(); console.log('✅ Call accepted!'); } catch(e){ console.error(e); }
+          });
+
+          // safety: timeout if 'ready' never fires
+          setTimeout(() => {
+            if (!device || !device.on) {
+              return; // device creation failed earlier; error handled by catch
+            }
+            // if still not resolved after 8s, reject
+            reject(new Error('Twilio Device ready timeout'));
+          }, 8000);
+
+        } catch (error) {
+          console.error('❌ Error initializing Twilio (initTwilio):', error);
+          reject(error);
+        }
       });
-
-    } catch (error) {
-      console.error('❌ Error initializing Twilio:', error);
     }
-  }
 
     async function fetchPhoneNumbers() {
       try {
