@@ -85,7 +85,7 @@ app.get('/dashboard', (req, res) => {
 
 // 登录
 app.post('/login', async (req, res) => {
-  if (typeof(req.body.email) === 'undefined' || typeof(req.body.password) === 'undefined') {
+  if (!req.body.email || !req.body.password) {
     return res.status(200).json({
       status: false,
       data: {},
@@ -93,31 +93,43 @@ app.post('/login', async (req, res) => {
     });
   }
 
-  client.query("SELECT * FROM users WHERE email = $1 AND password = crypt($2, password)", [req.body.email, req.body.password])
-    .then((result) => {
-      if (result.rows.length > 0) {
-        const token = GenerateJWT(result.rows[0].id, result.rows[0].email);
-       
-        res.status(200).json({
-          status: true,
-          data: {
-            userId: result.rows[0].id,
-            token: token,
-          },
-          message: ""
-        });
-      } else {
+  client.query(
+    "SELECT * FROM users WHERE email = $1 AND password = crypt($2, password)",
+    [req.body.email, req.body.password]
+  )
+  .then((result) => {
+    if (result.rows.length > 0) {
+      const user = result.rows[0];
+
+      if (!user.status) {
         return res.status(200).json({
           status: false,
           data: {},
-          message: "Error: Wrong email or Password",
+          message: "Account suspended",
         });
       }
-    })
-    .catch((e) => {
-      console.error(e.stack);
-      res.status(500).send(e.stack);
-    });
+
+      const token = GenerateJWT(user.id, user.email);
+      res.status(200).json({
+        status: true,
+        data: {
+          userId: user.id,
+          token: token,
+        },
+        message: ""
+      });
+    } else {
+      return res.status(200).json({
+        status: false,
+        data: {},
+        message: "Error: Wrong email or Password",
+      });
+    }
+  })
+  .catch((e) => {
+    console.error(e.stack);
+    res.status(500).send(e.stack);
+  });
 });
 
 app.get('/phone-numbers', verifyToken, async(req, res) => {
