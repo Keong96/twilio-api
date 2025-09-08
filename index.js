@@ -246,6 +246,19 @@ app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
     res.send(response.toString());
 });
 
+// 處理來電 Webhook
+app.post('/call-not-available', express.urlencoded({ extended: false }), async (req, res) => {
+  const response = new twilio.twiml.VoiceResponse();
+
+  response.say(
+  { language: 'en-US', voice: 'Polly.Joanna' },
+    '<speak><prosody rate="slow">Thank you for calling our customer service careline, we will contact you shortly.</prosody></speak>'
+  );
+  response.hangup();
+  res.type('text/xml').send(response.toString());
+  return;
+});
+
 // 處理用戶輸入
 app.post('/process-input', express.urlencoded({ extended: false }), async (req, res) => {
     const response = new twilio.twiml.VoiceResponse();
