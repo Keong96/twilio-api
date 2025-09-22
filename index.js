@@ -319,14 +319,24 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
 app.post('/make-call', async (req, res) => {
   const phoneNumber = req.body.phoneNumber;
   const to = req.body.to;
+
   try {
+    const result = await db.query(
+      'SELECT * FROM phone_number WHERE number = $1 AND deleted_at IS NULL',
+      [phoneNumber]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({ message: 'Phone number not found or deleted' });
+    }
+
     const call = await twilio_client.calls.create({
       url: `https://twilio-api-t328.onrender.com/voice-response`,
       to: to,
       from: phoneNumber,
     });
 
-    res.json({ message: 'Call initiated', callSid: call.sid});
+    res.json({ message: 'Call initiated', callSid: call.sid });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error initiating call', error: error.message });
