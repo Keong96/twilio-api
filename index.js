@@ -322,7 +322,7 @@ app.post('/make-call', async (req, res) => {
 
   try {
     const result = await client.query(
-      'SELECT * FROM phone_numbers WHERE number = $1 AND deleted_at IS NULL',
+      'SELECT * FROM phone_numbers WHERE phone_number = $1 AND deleted_at IS NULL',
       [phoneNumber]
     );
 
