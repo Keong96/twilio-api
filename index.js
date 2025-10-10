@@ -60,6 +60,15 @@ function verifyToken(req, res, next) {
   }
 }
 
+function normalizePhoneNumber(number) {
+  if (!number) return number;
+  number = number.trim();
+  if (!number.startsWith('+')) {
+    return '+' + number.replace(/^\+?/, '');
+  }
+  return number;
+}
+
 // WebRTC Token Generation
 app.post('/get-token', (req, res) => {
   const identity  = req.body.phoneNumber;
@@ -257,6 +266,15 @@ app.post('/call-not-available', express.urlencoded({ extended: false }), async (
   response.hangup();
   res.type('text/xml').send(response.toString());
   return;
+});
+
+// 處理來電 Webhook
+app.post('/direct-transfer/:number', express.urlencoded({ extended: false }), (req, res) => {
+  const response = new twilio.twiml.VoiceResponse();
+  const forwardTo = req.params.number; // e.g. +60123456789
+
+  response.dial(forwardTo);
+  res.type('text/xml').send(response.toString());
 });
 
 // 處理用戶輸入
