@@ -540,12 +540,15 @@ app.post('/phone-setting/:phoneNumber', verifyToken, async (req, res) => {
 
 // 截取撥打記錄
 app.get('/call-history/:phoneNumber', verifyToken, async (req, res) => {
-
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const phoneNumber = req.params.phoneNumber;
-  const result = await client.query('SELECT * FROM phone_numbers WHERE user_id = $1 AND phone_number = $2', [req.user.userId, phoneNumber]);
-    
+
+  const result = await client.query(
+    'SELECT * FROM phone_numbers WHERE user_id = $1 AND phone_number = $2',
+    [req.user.userId, phoneNumber]
+  );
+
   if (result.rows.length === 0) {
     return res.status(200).json({
       status: false,
@@ -554,12 +557,18 @@ app.get('/call-history/:phoneNumber', verifyToken, async (req, res) => {
   }
 
   try {
+    const now = new Date();
+    const startDate = new Date();
+    startDate.setDate(now.getDate() - 30);
+
     const [outboundCalls, inboundCalls] = await Promise.all([
       twilio_client.calls.list({
         to: phoneNumber,
+        startTimeAfter: startDate,
       }),
       twilio_client.calls.list({
         from: phoneNumber,
+        startTimeAfter: startDate,
       }),
     ]);
 
@@ -568,7 +577,7 @@ app.get('/call-history/:phoneNumber', verifyToken, async (req, res) => {
     if (allCalls.length === 0) {
       return res.status(200).json({
         status: true,
-        message: `No call records found for ${phoneNumber} in the specified period.`,
+        message: `No call records found for ${phoneNumber} in the past 30 days.`,
       });
     }
 
@@ -579,7 +588,7 @@ app.get('/call-history/:phoneNumber', verifyToken, async (req, res) => {
 
     return res.json({
       status: true,
-      message: `Call history for ${phoneNumber} fetched successfully.`,
+      message: `Call history for ${phoneNumber} (last 30 days) fetched successfully.`,
       data: paginatedCalls,
       pagination: {
         totalCalls,
@@ -588,7 +597,6 @@ app.get('/call-history/:phoneNumber', verifyToken, async (req, res) => {
         limit,
       },
     });
-
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ message: 'Error fetching call history', error: error.message });
