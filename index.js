@@ -150,7 +150,7 @@ app.get('/phone-numbers', verifyToken, async(req, res) => {
 app.get("/get-cover-name/:phoneNumber", verifyToken, async (req, res) => {
   const { phoneNumber } = req.params;
   try {
-    const result = await client.query("SELECT cover_name FROM phone_numbers WHERE phone_number = $1", [phoneNumber]);
+    const result = await client.query("SELECT cover_name FROM phone_numbers WHERE phone_number = $1 AND deleted_at IS NULL", [phoneNumber]);
     return res.status(200).json(result.rows[0].cover_name);
   } catch (error) {
     console.error("Error fetching cover name:", error);
