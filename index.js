@@ -696,7 +696,7 @@ app.get('/export-call-history/:phoneNumber', async (req, res) => {
       const duration = call.duration ? parseFloat(call.duration) : 0;
       let computedCost = 0;
       if (call.status === "completed") {
-        computedCost = 0.06 + (Math.ceil(duration / 60) * 0.06);
+        computedCost = 0.08 + (Math.ceil(duration / 60) * 0.08);
       }
       return {
         sid: call.sid,
