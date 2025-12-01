@@ -93,14 +93,14 @@
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
 
-      axios.post('https://twilio-api-t328.onrender.com/login', {
+      axios.post('https://twilio-api-production-a11f.up.railway.app/login', {
         email: email,
         password: password
       })
       .then(response => {
         if (response.data.status) {
           localStorage.setItem("token", response.data.data.token);
-          window.location.href = 'https://twilio-api-t328.onrender.com/dashboard.html';
+          window.location.href = 'https://twilio-api-production-a11f.up.railway.app/dashboard.html';
         } else {
           document.getElementById('error-message').textContent = response.data.message || 'Login failed. Please try again.';
         }
