@@ -9,6 +9,7 @@ const AccessToken = twilio.jwt.AccessToken;
 const VoiceGrant = AccessToken.VoiceGrant;
 const VoiceResponse = require('twilio').twiml.VoiceResponse;
 const app = express();
+const path = require('path');
 
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
@@ -62,11 +63,21 @@ function verifyToken(req, res, next) {
 
 function normalizePhoneNumber(number) {
   if (!number) return number;
-  number = number.trim();
-  if (!number.startsWith('+')) {
-    return '+' + number.replace(/^\+?/, '');
+  let str = number.toString().trim().replace(/\s+/g, '');
+  
+  if (str.startsWith('0')) {
+    return '+6' + str;
   }
-  return number;
+  
+  if (str.startsWith('60')) {
+    return '+' + str;
+  }
+  
+  if (!str.startsWith('+')) {
+    return '+' + str;
+  }
+  
+  return str;
 }
 
 // WebRTC Token Generation
@@ -311,8 +322,11 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
       if (result.rows[0].cover_number) {
         dialOptions.callerId = phoneNumber;
       }
-      console.log('Redirecting to:', settings.redirect_to);
-      response.dial(dialOptions, settings.redirect_to);
+
+      const targetNumber = normalizePhoneNumber(settings.redirect_to);
+      
+      console.log('Redirecting to:', targetNumber);
+      response.dial(dialOptions, targetNumber);
       
     } else {
       if (selectedLanguage === 'cmn') {
@@ -335,8 +349,8 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
 
 // 測試撥打電話
 app.post('/make-call', async (req, res) => {
-  const phoneNumber = req.body.phoneNumber;
-  const to = req.body.to;
+  const phoneNumber = normalizePhoneNumber(req.body.phoneNumber); 
+  const to = normalizePhoneNumber(req.body.to);
 
   try {
     const result = await client.query(
