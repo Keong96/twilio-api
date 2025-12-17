@@ -87,20 +87,22 @@
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
   <script>
+    const baseUrl = window.location.origin;
+
     document.getElementById('login-form').addEventListener('submit', async function (event) {
       event.preventDefault();
 
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
 
-      axios.post('https://twilio-api-production-a11f.up.railway.app/login', {
+      axios.post(`${baseUrl}/login`, {
         email: email,
         password: password
       })
       .then(response => {
         if (response.data.status) {
           localStorage.setItem("token", response.data.data.token);
-          window.location.href = 'https://twilio-api-production-a11f.up.railway.app/dashboard.html';
+          window.location.href = `${baseUrl}/dashboard.html`;
         } else {
           document.getElementById('error-message').textContent = response.data.message || 'Login failed. Please try again.';
         }

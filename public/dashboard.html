@@ -342,13 +342,14 @@
   </div>
 
   <script>
+    const baseUrl = window.location.origin;
     const token = localStorage.getItem("token");
     let device;
     let activeConnection = null;
     let callSID = null;
     let onHold = false;
     let currentPhoneNumber = "";
-
+    
     if(!token)
     {
       window.stop();
@@ -407,7 +408,7 @@
 
     async function initTwilio(phoneNumber) {
       try {
-        const response = await axios.post('https://twilio-api-production-a11f.up.railway.app/get-token', {
+        const response = await axios.post(`${baseUrl}/get-token`, {
           phoneNumber: phoneNumber
         });
 
@@ -433,7 +434,7 @@
 
     async function fetchPhoneNumbers() {
       try {
-        const response = await axios.get(`https://twilio-api-production-a11f.up.railway.app/phone-numbers`, {
+        const response = await axios.get(`${baseUrl}/phone-numbers`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -448,7 +449,7 @@
     
     async function getCoverName(phone) {
       try {
-        const response = await axios.get(`https://twilio-api-production-a11f.up.railway.app/get-cover-name/${phone}`, {
+        const response = await axios.get(`${baseUrl}/get-cover-name/${phone}`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -521,7 +522,7 @@
     }
     
     function fetchPhoneSetting(phone) {
-      axios.get(`https://twilio-api-production-a11f.up.railway.app/phone-setting/${phone}`, {
+      axios.get(`${baseUrl}/phone-setting/${phone}`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -576,7 +577,7 @@
         }
 
         // Make API call to initiate the call
-        const response = await axios.post(`https://twilio-api-production-a11f.up.railway.app/make-call`, {
+        const response = await axios.post(`${baseUrl}/make-call`, {
           phoneNumber: phoneNumber,
           to: callTo
         }, {
@@ -633,7 +634,7 @@
       onHold = !onHold;
 
       const endpoint = onHold ? '/hold-participant' : '/unhold-participant';
-      const response = await axios.post(`https://twilio-api-production-a11f.up.railway.app${endpoint}`, {
+      const response = await axios.post(`${baseUrl}${endpoint}`, {
         conferenceName: `ROOM-${currentPhoneNumber}`,
       }, {
         headers: {
@@ -655,7 +656,7 @@
       if (callSID)
       {
         try {
-          await axios.post(`https://twilio-api-production-a11f.up.railway.app/cancel-call?callSID=${callSID}`);
+          await axios.post(`${baseUrl}/cancel-call?callSID=${callSID}`);
           console.log('Outbound call canceled.');
           statusElement.innerText = `Call Canceled`;
         } catch (error) {
@@ -670,7 +671,7 @@
 
     function fetchCallHistory(number, page = 1, limit = 10)
     {
-      axios.get(`https://twilio-api-production-a11f.up.railway.app/call-history/${number}?page=${page}&limit=${limit}`, {
+      axios.get(`${baseUrl}/call-history/${number}?page=${page}&limit=${limit}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -747,7 +748,7 @@
       const editButton = document.getElementById(`edit-${phoneNumber}`);
       const saveButton = document.getElementById(`save-${phoneNumber}`);
 
-      await axios.post(`https://twilio-api-production-a11f.up.railway.app/update-cover-name/${phoneNumber}`, {
+      await axios.post(`${baseUrl}/update-cover-name/${phoneNumber}`, {
         cover_name: coverInput.value
       }, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
@@ -758,7 +759,7 @@
         let descriptionInput = section.querySelector(`[id="redirection-description${i}"]`);
         let phoneNumberInput = section.querySelector(`[id="redirection-number${i}"]`);
 
-        await axios.post(`https://twilio-api-production-a11f.up.railway.app/phone-setting/${phoneNumber}`, {
+        await axios.post(`${baseUrl}/phone-setting/${phoneNumber}`, {
           digit: redirectInput.value,
           content: descriptionInput.value,
           redirect_to: phoneNumberInput.value
@@ -785,7 +786,7 @@
 
     function logout() {
       localStorage.removeItem("token");
-      window.location.href = "https://twilio-api-production-a11f.up.railway.app/login.html";
+      window.location.href = `${baseUrl}/login.html`;
     }
     
     async function submitChangePassword() {
@@ -801,7 +802,7 @@
       const token = localStorage.getItem("token");
 
       try {
-        const response = await axios.post("https://twilio-api-production-a11f.up.railway.app/change-password", 
+        const response = await axios.post(`${baseUrl}/change-password`, 
         {
           oldPassword,
           newPassword

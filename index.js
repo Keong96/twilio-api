@@ -18,6 +18,8 @@ const TWILIO_API_KEY = process.env.TWILIO_API_KEY;
 const TWILIO_API_SECRET = process.env.TWILIO_API_SECRET;
 const PORT = process.env.PORT || 3000;
 
+const BASE_URL = process.env.BASE_URL; 
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
@@ -241,7 +243,7 @@ app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
 
     const gather = response.gather({
       numDigits: 1,
-      action: 'https://twilio-api-production-a11f.up.railway.app/process-input',
+      action: `${BASE_URL}/process-input`,
       method: 'POST',
     });
 
@@ -338,7 +340,7 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
       }      
       const gather = response.gather({
         numDigits: 1,
-        action: 'https://twilio-api-production-a11f.up.railway.app/process-input',
+        action: `${BASE_URL}/process-input`,
         method: 'POST'
       });
     }
@@ -363,7 +365,7 @@ app.post('/make-call', async (req, res) => {
     }
 
     const call = await twilio_client.calls.create({
-      url: `https://twilio-api-production-a11f.up.railway.app/voice-response`,
+      url: `${BASE_URL}/voice-response`,
       to: to,
       from: phoneNumber,
     });
@@ -430,7 +432,7 @@ app.post('/hold-participant', async (req, res) => {
         .participants(participant.callSid)
         .update({
           hold: true,
-          holdUrl: 'https://twilio-api-production-a11f.up.railway.app/hold-music'
+          holdUrl: `${BASE_URL}/hold-music`
         });
     }));
     
