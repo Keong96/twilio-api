@@ -33,10 +33,6 @@ const config = {
 const client = new Client(config);
 client.connect();
 
-app.get('/', (req, res) => {
-  return res.send("OK");
-});
-
 function GenerateJWT(_userId, _email) {
   return jwt.sign(
     { userId: _userId, email: _email},

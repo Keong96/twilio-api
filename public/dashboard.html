@@ -414,7 +414,7 @@
 
         const data = response.data;
         currentPhoneNumber = phoneNumber;
-        device = new Twilio.Device(data.token, { logLevel: 1 });
+        device = new Twilio.Device(data.token, { logLevel: 1, edge: ['singapore', 'ashburn'] });
         device.register();
 
         device.on("ready", () => console.log("✅ Twilio Device Ready"));
