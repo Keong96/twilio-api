@@ -97,6 +97,10 @@ app.post('/get-token', (req, res) => {
   res.json({ token: token.toJwt() });
 });
 
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
 app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });

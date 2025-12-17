@@ -612,9 +612,9 @@
             document.getElementById('toggle-hold-button').innerHTML = "Hold"
             document.getElementById("hangup-call-button").disabled = true;
           });
-          activeConnection.on("error", () => {
+          activeConnection.on("error", (err) => {
             statusElement.innerText = `Error`;
-            console.log("Call error:", error);
+            console.log("Call error:", err);
             document.getElementById("init-call-button").disabled = false;
             document.getElementById('toggle-hold-button').disabled = true;
             document.getElementById('toggle-hold-button').innerHTML = "Hold"
