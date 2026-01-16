@@ -364,8 +364,10 @@ app.post('/make-call', async (req, res) => {
       return res.json({ message: 'Phone number not found or deleted' });
     }
 
+    const conferenceRoom = "ROOM-" + phoneNumber.replace('+', '');
+
     const call = await twilio_client.calls.create({
-      url: `${BASE_URL}/voice-response`,
+      url: `${BASE_URL}/voice-response?room=${encodeURIComponent(conferenceRoom)}`,
       to: to,
       from: phoneNumber,
     });
@@ -377,46 +379,97 @@ app.post('/make-call', async (req, res) => {
   }
 });
 
+// app.post('/voice-response', async (req, res) => {  
+//   const twiml = new twilio.twiml.VoiceResponse();
+//   const caller = req.body.Caller || '';
+//   const conferenceRoom = "ROOM-"+caller.replace(/^client:/, '');
+
+//   try {
+//     const conferences = await twilio_client.conferences.list({
+//       friendlyName: conferenceRoom,
+//       status: 'in-progress'
+//     });
+
+//     if (conferences.length > 0) {
+//       const activeConference = conferences[0];
+//       const participants = await twilio_client.conferences(activeConference.sid)
+//         .participants
+//         .list();
+
+//       if (participants.length >= 2) {
+//         twiml.reject();
+//         return res.type('text/xml').send(twiml.toString());
+//       }
+      
+//       const duplicate = participants.find(p => p.callSid === req.body.CallSid);
+//       if (duplicate) {
+//         twiml.reject();
+//         return res.type('text/xml').send(twiml.toString());
+//       }
+//     }
+//   } catch (error) {
+//     console.error("Error checking active conference:", error);
+//     twiml.reject();
+//     return res.type('text/xml').send(twiml.toString());
+//   }
+
+//   twiml.dial().conference(conferenceRoom, {
+//     startConferenceOnEnter: true,
+//     endConferenceOnExit: true,
+//     maxParticipants: 2,
+//     region: 'sg1'
+//   });
+//   res.type('text/xml').send(twiml.toString());
+// });
+
 app.post('/voice-response', async (req, res) => {  
   const twiml = new twilio.twiml.VoiceResponse();
   const caller = req.body.Caller || '';
-  const conferenceRoom = "ROOM-"+caller.replace(/^client:/, '');
-
-  try {
-    const conferences = await twilio_client.conferences.list({
-      friendlyName: conferenceRoom,
-      status: 'in-progress'
-    });
-
-    if (conferences.length > 0) {
-      const activeConference = conferences[0];
-      const participants = await twilio_client.conferences(activeConference.sid)
-        .participants
-        .list();
-
-      if (participants.length >= 2) {
-        twiml.reject();
-        return res.type('text/xml').send(twiml.toString());
-      }
-      
-      const duplicate = participants.find(p => p.callSid === req.body.CallSid);
-      if (duplicate) {
-        twiml.reject();
-        return res.type('text/xml').send(twiml.toString());
-      }
-    }
-  } catch (error) {
-    console.error("Error checking active conference:", error);
-    twiml.reject();
-    return res.type('text/xml').send(twiml.toString());
+  
+  let conferenceRoom = req.query.room;
+  if (!conferenceRoom) {
+    conferenceRoom = "ROOM-" + caller.replace(/^client:/, '');
   }
 
-  twiml.dial().conference(conferenceRoom, {
+  const expectedCustomer = req.body.ExpectedCustomer;
+  const isAgent = caller.startsWith('client:');
+
+  if (isAgent) {
+    try {
+      const conferences = await twilio_client.conferences.list({
+        friendlyName: conferenceRoom,
+        status: 'in-progress',
+        limit: 1
+      });
+      
+      if (conferences.length > 0) {
+        const confSid = conferences[0].sid;
+        const participants = await twilio_client.conferences(confSid).participants.list();
+        
+        let targetFound = false;
+
+        if (expectedCustomer) {
+            targetFound = participants.some(p => p.label && p.label.includes(expectedCustomer));
+        }
+
+        if (!targetFound) {
+           await twilio_client.conferences(confSid).update({ status: 'completed' });
+           await new Promise(r => setTimeout(r, 1000)); 
+        }
+      }
+    } catch (e) { console.error(e); }
+  } else {
+    console.log(`👤 客户进场，直接加入: ${conferenceRoom}`);
+  }
+
+  const dial = twiml.dial();
+  dial.conference({
     startConferenceOnEnter: true,
     endConferenceOnExit: true,
     maxParticipants: 2,
-    region: 'sg1'
-  });
+    region: 'sg1' 
+  }, conferenceRoom);
+
   res.type('text/xml').send(twiml.toString());
 });
 
@@ -582,10 +635,12 @@ app.get('/call-history/:phoneNumber', verifyToken, async (req, res) => {
       twilio_client.calls.list({
         to: phoneNumber,
         startTimeAfter: startDate,
+        limit: 50,
       }),
       twilio_client.calls.list({
         from: phoneNumber,
         startTimeAfter: startDate,
+        limit: 50,
       }),
     ]);
 

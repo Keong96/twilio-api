@@ -10,11 +10,12 @@ services:
       POSTGRES_USER: twilio_user
       POSTGRES_PASSWORD: twilio_password
       POSTGRES_DB: twilio_database
+      TZ: Asia/Kuala_Lumpur
     volumes:
       - ./pgdata:/var/lib/postgresql/data
     ports:
       # 外部连接端口 (给 pgAdmin 用的)
-      - "5436:5432"
+      - "127.0.0.1:5436:5432"
     networks:
       - twilio_net
 
@@ -25,13 +26,13 @@ services:
     restart: always
     depends_on:
       - twilio_db
-    ports:
-      # 浏览器访问端口
-      - "3004:3000"
     env_file:
       - .env
     networks:
       - twilio_net
+      - caddy_net
 
 networks:
   twilio_net:
+  caddy_net:
+    external: true

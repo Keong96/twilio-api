@@ -591,7 +591,10 @@
         if (response.data.callSid)
         {
           callSID = response.data.callSid;
-          activeConnection = await device.connect({});
+          activeConnection = await device.connect({
+            To: callTo,
+            ExpectedCustomer: callTo
+          });
           activeConnection.on("accept", () => {
             statusElement.innerText = `Calling ${callTo}`;
             document.getElementById("init-call-button").disabled = true;
