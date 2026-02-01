@@ -65,7 +65,7 @@ for row in "${customers[@]}"; do
     for num in "${num_array[@]}"; do
         # 1. URL 编码
         encoded_num=$(echo "$num" | sed 's/+/%2B/g')
-        url="https://make-call.online/export-call-history/$encoded_num?month=$MONTH&year=$YEAR"
+        url="https://make-call.top/export-call-history/$encoded_num?month=$MONTH&year=$YEAR"
         
         # 2. 设置保存路径 (直接保存到文件夹中，不删除了)
         file_name="${num}.csv"
