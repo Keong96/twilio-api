@@ -321,9 +321,11 @@ app.post('/process-input', express.urlencoded({ extended: false }), async (req, 
       response.pause({ length: 2 });
       let dialOptions = { answerOnBridge: false };
 
-      if (result.rows[0].cover_number) {
-        dialOptions.callerId = phoneNumber;
-      }
+      dialOptions.callerId = phoneNumber;
+      
+      // if (result.rows[0].cover_number) {
+      //   dialOptions.callerId = phoneNumber;
+      // }
 
       const targetNumber = normalizePhoneNumber(settings.redirect_to);
       
