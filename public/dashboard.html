@@ -278,9 +278,13 @@
   <div class="container">
     <div class="sidebar">
       <div class="user-info">
-        <p id="username-display"></p>
-        <a href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</a>
+      <p id="username-display"></p>
+      <div style="display: flex; align-items: center; margin-bottom: 5px;">
+        <p id="balance-display" style="font-size: 18px; color: #008000; font-weight: bold; margin: 0;">Balance: $--.--</p>
+        <i class="fa fa-refresh" id="refresh-balance-icon" style="margin-left: 10px; cursor: pointer; color: #6f42c1; font-size: 18px;" onclick="fetchUserProfile()"></i>
       </div>
+      <a href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</a>
+    </div>
       <br>
       <br>
       <h2>Sidebar</h2>
@@ -373,6 +377,7 @@
     const phoneDropdown = document.getElementById("phone-number");
 
     document.addEventListener("DOMContentLoaded", async function () {
+      await fetchUserProfile(); 
       phoneNumbers = await fetchPhoneNumbers();
 
       for (const phone of phoneNumbers) {
@@ -405,6 +410,30 @@
 
       sidebarNav.appendChild(logoutLink);
     });
+
+    async function fetchUserProfile() {
+      const icon = document.getElementById("refresh-balance-icon");
+      const balanceEl = document.getElementById("balance-display");
+
+      if (icon) icon.classList.add("fa-spin");
+
+      const response = await axios.get(`${baseUrl}/user-profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const { balance } = response.data;
+      const numBalance = parseFloat(balance);
+
+      if (numBalance < 10) {
+        balanceEl.style.color = "red";
+        balanceEl.textContent = `Balance: $${numBalance.toFixed(2)} - LOW BALANCE`;
+      } else {
+        balanceEl.style.color = "#008000";
+        balanceEl.textContent = `Balance: $${numBalance.toFixed(2)}`;
+      }
+
+      if (icon) icon.classList.remove("fa-spin");
+    }
 
     async function initTwilio(phoneNumber) {
       try {

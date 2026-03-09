@@ -41,22 +41,36 @@ function GenerateJWT(_userId, _email) {
   );
 }
 
-function verifyToken(req, res, next) {
+async function verifyToken(req, res, next) {
   const authHeader = req.headers["authorization"];
+  if (!authHeader) return res.sendStatus(401);
 
-  if (authHeader) {
-    const token = authHeader.split(" ")[1];
-    jwt.verify(token, process.env.TOKEN_KEY, (err, user) => {
-      if (err) {
-        return res.sendStatus(403);
+  const token = authHeader.split(" ")[1];
+  jwt.verify(token, process.env.TOKEN_KEY, async (err, decoded) => {
+    if (err) return res.sendStatus(403);
+
+    try {
+      const userRes = await client.query("SELECT id, status, balance FROM users WHERE id = $1", [decoded.userId]);
+      const user = userRes.rows[0];
+
+      if (!user) return res.sendStatus(403);
+
+      // 余额小于 10，自动关停账号
+      if (parseFloat(user.balance) < 10 && user.status === true) {
+        await client.query("UPDATE users SET status = false WHERE id = $1", [user.id]);
+        user.status = false; 
       }
 
-      req.user = user;
+      if (!user.status) {
+        return res.status(403).json({ status: false, message: "Account suspended. Please top up." });
+      }
+
+      req.user = decoded; 
       next();
-    });
-  } else {
-    res.sendStatus(401);
-  }
+    } catch (e) {
+      res.sendStatus(500);
+    }
+  });
 }
 
 function normalizePhoneNumber(number) {
@@ -154,6 +168,24 @@ app.post('/login', async (req, res) => {
   });
 });
 
+// 获取当前用户信息（余额和费率）
+app.get('/user-profile', verifyToken, async (req, res) => {
+  try {
+    const result = await client.query(
+      'SELECT balance FROM users WHERE id = $1', 
+      [req.user.userId]
+    );
+    
+    if (result.rows.length > 0) {
+      res.status(200).json(result.rows[0]);
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/phone-numbers', verifyToken, async(req, res) => {
   const result = await client.query('SELECT phone_number FROM phone_numbers WHERE user_id = $1 AND deleted_at IS NULL', [req.user.userId]);
   const phoneNumbers = result.rows.map(row => row.phone_number);
@@ -173,99 +205,65 @@ app.get("/get-cover-name/:phoneNumber", verifyToken, async (req, res) => {
 
 // 處理來電 Webhook
 app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
-    const response = new twilio.twiml.VoiceResponse();
+  const response = new twilio.twiml.VoiceResponse();
+  const isInbound = req.body.Direction === 'inbound';
+  const phoneNumber = isInbound ? req.body.To : req.body.From;
 
-    const isInbound = req.body.Direction === 'inbound';
-    const phoneNumber = isInbound ? req.body.To : req.body.From;
-    const selectedLanguage = (await client.query('SELECT language FROM phone_numbers WHERE phone_number = $1', [phoneNumber])).rows[0]?.language;
-    const cover_name = (await client.query('SELECT cover_name FROM phone_numbers WHERE phone_number = $1', [phoneNumber])).rows[0]?.cover_name;
+  const userResult = await client.query(`
+    SELECT u.id, u.status, u.balance, p.language, p.cover_name 
+    FROM users u 
+    JOIN phone_numbers p ON u.id = p.user_id 
+    WHERE p.phone_number = $1 AND p.deleted_at IS NULL`, [phoneNumber]);
 
-    const result = await client.query('SELECT * FROM phone_settings WHERE phone_number = $1 ORDER BY digit ASC', [phoneNumber]);
-    const ivrSettings =  result.rows;
+  const user = userResult.rows[0];
 
-    if (ivrSettings.length === 0) {
-      if (selectedLanguage === 'cmn') {
-        response.say(
-          { language: 'cmn-CN', voice: 'Polly.Zhiyu' },
-          '<speak><prosody rate="slow">当前没有可用的选项，请稍后再试。</prosody></speak>'
-        );
-      } else if (selectedLanguage === 'en') {
-        response.say(
-          { language: 'en-US', voice: 'Polly.Joanna' },
-          '<speak><prosody rate="slow">There are currently no available options, please try again later.</prosody></speak>'
-        );
-      } else if (selectedLanguage === 'ms') {
-        response.say(
-          { language: 'ms-MY', voice: 'Google.ms-MY-Standard-A' },
-          '<speak><prosody rate="slow">Tiada pilihan yang tersedia pada masa ini, sila cuba lagi kemudian.</prosody></speak>'
-        );
-      }
-      response.hangup();
-      res.type('text/xml').send(response.toString());
-      return;
+  // 拦截逻辑：如果没有用户、账号停机、或余额小于 10
+  if (!user || !user.status || parseFloat(user.balance) < 10) {
+    if (user && user.status && parseFloat(user.balance) < 10) {
+      await client.query("UPDATE users SET status = false WHERE id = $1", [user.id]);
     }
-    
-    let ivrMenuText = '';
-    if (selectedLanguage === 'cmn') {
+    response.say({ language: 'en-US' }, "We are sorry, this service is currently unavailable. Please contact support.");
+    response.hangup();
+    return res.type('text/xml').send(response.toString());
+  }
 
-      if(cover_name)
-        ivrMenuText = `欢迎致电 ${cover_name} <break time="1s"/>`;
-      else
-        ivrMenuText = '欢迎致电，<break time="1s"/>';
+  const selectedLanguage = user.language;
+  const cover_name = user.cover_name;
+  const result = await client.query('SELECT * FROM phone_settings WHERE phone_number = $1 ORDER BY digit ASC', [phoneNumber]);
+  const ivrSettings = result.rows;
 
-      ivrSettings.forEach(setting => {
-        if(setting.digit && setting.content && setting.redirect_to)
-          ivrMenuText += `按 ${setting.digit}，${setting.content}，`;
-      });
-    } else if (selectedLanguage === 'en') {
+  if (ivrSettings.length === 0) {
+    const msg = {
+      'cmn': '当前没有可用的选项，请稍后再试。',
+      'en': 'There are currently no available options, please try again later.',
+      'ms': 'Tiada pilihan yang tersedia pada masa ini, sila cuba lagi kemudian.'
+    };
+    const voices = { 'cmn': 'Polly.Zhiyu', 'en': 'Polly.Joanna', 'ms': 'Google.ms-MY-Standard-A' };
+    const langs = { 'cmn': 'cmn-CN', 'en': 'en-US', 'ms': 'ms-MY' };
 
-      if(cover_name)
-        ivrMenuText = `Welcome to ${cover_name} <break time="1s"/>`;
-      else
-        ivrMenuText = 'Welcome,  <break time="1s"/>';
+    response.say({ language: langs[selectedLanguage] || 'en-US', voice: voices[selectedLanguage] || 'Polly.Joanna' }, `<speak><prosody rate="slow">${msg[selectedLanguage] || msg['en']}</prosody></speak>`);
+    response.hangup();
+    return res.type('text/xml').send(response.toString());
+  }
+  
+  let ivrMenuText = '';
+  if (selectedLanguage === 'cmn') {
+    ivrMenuText = cover_name ? `欢迎致电 ${cover_name} <break time="1s"/>` : '欢迎致电，<break time="1s"/>';
+    ivrSettings.forEach(s => { if(s.digit && s.content) ivrMenuText += `按 ${s.digit}，${s.content}，`; });
+  } else if (selectedLanguage === 'en') {
+    ivrMenuText = cover_name ? `Welcome to ${cover_name} <break time="1s"/>` : 'Welcome, <break time="1s"/>';
+    ivrSettings.forEach(s => { if(s.digit && s.content) ivrMenuText += `${s.content}, please press ${s.digit}.`; });
+  } else if (selectedLanguage === 'ms') {
+    ivrMenuText = cover_name ? `Selamat datang ke ${cover_name} <break time="1s"/>` : 'Selamat datang, <break time="1s"/>';
+    ivrSettings.forEach(s => { if(s.digit && s.content) ivrMenuText += `Tekan ${s.digit} untuk ${s.content}, `; });
+  }
 
-      ivrSettings.forEach(setting => {
-        if(setting.digit && setting.content && setting.redirect_to)
-          ivrMenuText += `${setting.content}, please press ${setting.digit}.`;
-      });
-    } else if (selectedLanguage === 'ms') {
-
-      if(cover_name)
-        ivrMenuText = `Selamat datang ke ${cover_name} <break time="1s"/>`;
-      else
-        ivrMenuText = 'Selamat datang, <break time="1s"/>';
-
-      ivrSettings.forEach(setting => {
-        if(setting.digit && setting.content && setting.redirect_to)
-          ivrMenuText += `Tekan ${setting.digit} untuk ${setting.content}, `;
-      });
-    }
-
-    const gather = response.gather({
-      numDigits: 1,
-      action: `${BASE_URL}/process-input`,
-      method: 'POST',
-    });
-
-    if (selectedLanguage === 'cmn') {
-      gather.say(
-        { language: 'cmn-CN', voice: 'Polly.Zhiyu' },
-        `<speak><prosody rate="slow">${ivrMenuText}</prosody></speak>`
-      );
-    } else if (selectedLanguage === 'en') {
-      gather.say(
-        { language: 'en-US', voice: 'Polly.Joanna' },
-        `<speak><prosody rate="slow">${ivrMenuText}</prosody></speak>`
-      );
-    } else if (selectedLanguage === 'ms') {
-      gather.say(
-        { language: 'ms-MY', voice: 'Google.ms-MY-Standard-A' },
-        `<speak><prosody rate="slow">${ivrMenuText}</prosody></speak>`
-      );
-    }
-
-    res.type('text/xml');
-    res.send(response.toString());
+  const gather = response.gather({ numDigits: 1, action: `${BASE_URL}/process-input`, method: 'POST' });
+  const voiceSettings = { 'cmn': {l:'cmn-CN', v:'Polly.Zhiyu'}, 'en': {l:'en-US', v:'Polly.Joanna'}, 'ms': {l:'ms-MY', v:'Google.ms-MY-Standard-A'} };
+  const vs = voiceSettings[selectedLanguage] || voiceSettings['en'];
+  
+  gather.say({ language: vs.l, voice: vs.v }, `<speak><prosody rate="slow">${ivrMenuText}</prosody></speak>`);
+  res.type('text/xml').send(response.toString());
 });
 
 // 處理來電 Webhook
@@ -290,66 +288,7 @@ app.post('/direct-transfer/:number', express.urlencoded({ extended: false }), (r
   res.type('text/xml').send(response.toString());
 });
 
-// 處理用戶輸入
-app.post('/process-input', express.urlencoded({ extended: false }), async (req, res) => {
-    const response = new twilio.twiml.VoiceResponse();
-    const userInput = req.body.Digits;
-    const phoneNumber = req.body.To;
-    const selectedLanguage = (await client.query('SELECT language FROM phone_numbers WHERE phone_number = $1', [phoneNumber])).rows[0]?.language;
-    const result = await client.query('SELECT * FROM phone_settings WHERE phone_number = $1', [phoneNumber]);
 
-    const settings = result.rows.find(row => row.digit === Number(userInput));
-
-    if (settings) {
-      if (selectedLanguage === 'cmn') {
-        response.say(
-          { language: 'cmn-CN', voice: 'Polly.Zhiyu' },
-          '<speak><prosody rate="slow">请稍候，我们正在为您转接。</prosody></speak>'
-        );
-      } else if (selectedLanguage === 'en') {
-        response.say(
-          { language: 'en-US', voice: 'Polly.Joanna' },
-          '<speak><prosody rate="slow">Please wait, we are transferring your call.</prosody></speak>'
-        );
-      } else if (selectedLanguage === 'ms') {
-        response.say(
-          { language: 'ms-MY', voice: 'Google.ms-MY-Standard-A' },
-          '<speak><prosody rate="slow">Sila tunggu, kami sedang memindahkan panggilan anda.</prosody></speak>'
-        );
-      }
-      
-      response.pause({ length: 2 });
-      let dialOptions = { answerOnBridge: false };
-
-      dialOptions.callerId = phoneNumber;
-      
-      // if (result.rows[0].cover_number) {
-      //   dialOptions.callerId = phoneNumber;
-      // }
-
-      const targetNumber = normalizePhoneNumber(settings.redirect_to);
-      
-      console.log('Redirecting to:', targetNumber);
-      response.dial(dialOptions, targetNumber);
-      
-    } else {
-      if (selectedLanguage === 'cmn') {
-        response.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' }, '<speak><prosody rate="slow">無效的選擇，請重試。</prosody></speak>');
-      } else if (selectedLanguage === 'en') {
-        response.say({ language: 'en-US', voice: 'Polly.Joanna' }, '<speak><prosody rate="slow">Invalid selection, please try again.</prosody></speak>');
-      } else if (selectedLanguage === 'ms') {
-        response.say({ language: 'ms-MY', voice: 'Google.ms-MY-Standard-A' }, '<speak><prosody rate="slow">Pilihan tidak sah, sila cuba lagi.</prosody></speak>');
-      }      
-      const gather = response.gather({
-        numDigits: 1,
-        action: `${BASE_URL}/process-input`,
-        method: 'POST'
-      });
-    }
-
-    res.type('text/xml');
-    res.send(response.toString());
-});
 
 // 測試撥打電話
 app.post('/make-call', async (req, res) => {
@@ -357,13 +296,14 @@ app.post('/make-call', async (req, res) => {
   const to = normalizePhoneNumber(req.body.to);
 
   try {
-    const result = await client.query(
-      'SELECT * FROM phone_numbers WHERE phone_number = $1 AND deleted_at IS NULL',
-      [phoneNumber]
-    );
+    const userRes = await client.query(`
+      SELECT u.id, u.status, u.balance FROM users u 
+      JOIN phone_numbers p ON u.id = p.user_id 
+      WHERE p.phone_number = $1`, [phoneNumber]);
 
-    if (result.rows.length === 0) {
-      return res.json({ message: 'Phone number not found or deleted' });
+    const user = userRes.rows[0];
+    if (!user || !user.status || parseFloat(user.balance) < 10) {
+      return res.status(403).json({ message: 'Low balance' });
     }
 
     const conferenceRoom = "ROOM-" + phoneNumber.replace('+', '');
@@ -372,12 +312,14 @@ app.post('/make-call', async (req, res) => {
       url: `${BASE_URL}/voice-response?room=${encodeURIComponent(conferenceRoom)}`,
       to: to,
       from: phoneNumber,
+      statusCallback: `${BASE_URL}/status-callback`,
+      statusCallbackMethod: 'POST',
+      statusCallbackEvent: ['completed']
     });
 
     res.json({ message: 'Call initiated', callSid: call.sid });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error initiating call', error: error.message });
+    res.status(500).send(error.message);
   }
 });
 
@@ -719,58 +661,40 @@ app.get('/export-call-history/:phoneNumber', async (req, res) => {
   const month = parseInt(req.query.month);
   const year = parseInt(req.query.year);
 
-  if (!month || !year) {
-    return res.status(400).json({
-      status: false,
-      message: 'Please provide both month and year as query parameters.'
-    });
-  }
-
-  const startTimeAfter = new Date(year, month - 1, 1);
-  const startTimeBefore = new Date(year, month, 1);
-
   try {
-    const [
-      outboundPlain,
-      outboundClient,
-      inboundPlain,
-      inboundClient
-    ] = await Promise.all([
-      twilio_client.calls.list({
-        to: phoneNumber,
-        startTimeAfter: startTimeAfter,
-        startTimeBefore: startTimeBefore,
-        limit: 1000
-      }),
-      twilio_client.calls.list({
-        to: `client:${phoneNumber}`,
-        startTimeAfter: startTimeAfter,
-        startTimeBefore: startTimeBefore,
-        limit: 1000
-      }),
-      twilio_client.calls.list({
-        from: phoneNumber,
-        startTimeAfter: startTimeAfter,
-        startTimeBefore: startTimeBefore,
-        limit: 1000
-      }),
-      twilio_client.calls.list({
-        from: `client:${phoneNumber}`,
-        startTimeAfter: startTimeAfter,
-        startTimeBefore: startTimeBefore,
-        limit: 1000
-      })
+    const userRes = await client.query(`
+      SELECT u.id, u.rate, u.balance, u.status 
+      FROM users u 
+      JOIN phone_numbers p ON u.id = p.user_id 
+      WHERE p.phone_number = $1 AND p.deleted_at IS NULL`, 
+      [phoneNumber]
+    );
+
+    if (userRes.rows.length === 0) {
+      return res.status(404).json({ status: false, message: 'Phone number owner not found.' });
+    }
+
+    let user = userRes.rows[0];
+    const userRate = parseFloat(user.rate);
+
+    const startTimeAfter = new Date(year, month - 1, 1);
+    const startTimeBefore = new Date(year, month, 1);
+
+    const [outboundPlain, outboundClient, inboundPlain, inboundClient] = await Promise.all([
+      twilio_client.calls.list({ to: phoneNumber, startTimeAfter, startTimeBefore, limit: 1000 }),
+      twilio_client.calls.list({ to: `client:${phoneNumber}`, startTimeAfter, startTimeBefore, limit: 1000 }),
+      twilio_client.calls.list({ from: phoneNumber, startTimeAfter, startTimeBefore, limit: 1000 }),
+      twilio_client.calls.list({ from: `client:${phoneNumber}`, startTimeAfter, startTimeBefore, limit: 1000 })
     ]);
 
     const allCalls = [...outboundPlain, ...outboundClient, ...inboundPlain, ...inboundClient];
-
     allCalls.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
     const mappedCalls = allCalls.map(call => {
       const duration = call.duration ? parseFloat(call.duration) : 0;
       let computedCost = 0;
       if (call.status === "completed") {
-        computedCost = 0.08 + (Math.ceil(duration / 60) * 0.08);
+        computedCost = userRate + (Math.ceil(duration / 60) * userRate);
       }
       return {
         sid: call.sid,
@@ -780,7 +704,7 @@ app.get('/export-call-history/:phoneNumber', async (req, res) => {
         direction: call.direction,
         from: call.from,
         to: call.to,
-        cost: computedCost
+        cost: computedCost.toFixed(2)
       };
     });
 
@@ -792,20 +716,43 @@ app.get('/export-call-history/:phoneNumber', async (req, res) => {
     res.attachment(`call_history_${phoneNumber}.csv`);
     res.send(csv);
 
-    // res.json({
-    //   status: true,
-    //   message: `Call history for ${phoneNumber} for ${month}/${year} fetched successfully.`,
-    //   data: mappedCalls,
-    //   totalCost: totalCostFormatted
-    // });
   } catch (error) {
-    console.error('Error fetching call history:', error);
-    res.status(500).json({
-      status: false,
-      message: 'Error fetching call history',
-      error: error.message
-    });
+    console.error('Export Error:', error);
+    res.status(500).json({ status: false, message: 'Internal error' });
   }
+});
+
+app.post('/status-callback', async (req, res) => {
+  const duration = parseInt(req.body.CallDuration) || 0;
+  const callStatus = req.body.CallStatus;
+  const from = req.body.From;
+  const to = req.body.To;
+
+  if (callStatus === 'completed') {
+    try {
+      const userRes = await client.query(`
+        SELECT u.id, u.rate FROM users u 
+        JOIN phone_numbers p ON u.id = p.user_id 
+        WHERE p.phone_number IN ($1, $2) AND p.deleted_at IS NULL LIMIT 1`, [from, to]);
+
+      if (userRes.rows.length > 0) {
+        const user = userRes.rows[0];
+        const userRate = parseFloat(user.rate);
+        
+        const totalMinutes = 1 + Math.ceil(duration / 60);
+        const totalCost = totalMinutes * userRate;
+
+        await client.query(
+          "UPDATE users SET balance = balance - $1 WHERE id = $2",
+          [totalCost, user.id]
+        );
+        console.log(`[Billing] Leg Ended. Duration: ${duration}s. Cost: $${totalCost.toFixed(2)} deducted from User: ${user.id}`);
+      }
+    } catch (err) {
+      console.error("Billing Error:", err);
+    }
+  }
+  res.sendStatus(200);
 });
 
 // 啟動伺服器
