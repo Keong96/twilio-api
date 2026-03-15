@@ -55,14 +55,14 @@ async function verifyToken(req, res, next) {
 
       if (!user) return res.sendStatus(403);
 
-      // 余额小于 10，自动关停账号
-      if (parseFloat(user.balance) < 10 && user.status === true) {
+      // 余额小于 1，自动关停账号
+      if (parseFloat(user.balance) < 1 && user.status === true) {
         await client.query("UPDATE users SET status = false WHERE id = $1", [user.id]);
         user.status = false; 
       }
 
       if (!user.status) {
-        return res.status(403).json({ status: false, message: "Account suspended. Please top up." });
+        return res.status(200).json({ status: false, data: {}, message: "Account suspended." });
       }
 
       req.user = decoded; 
@@ -172,15 +172,21 @@ app.post('/login', async (req, res) => {
 app.get('/user-profile', verifyToken, async (req, res) => {
   try {
     const result = await client.query(
-      'SELECT balance FROM users WHERE id = $1', 
+      'SELECT * FROM users WHERE id = $1', 
       [req.user.userId]
     );
     
     if (result.rows.length > 0) {
-      res.status(200).json(result.rows[0]);
+      res.status(200).json({ balance: result.rows[0].balance });
     } else {
       res.status(404).json({ message: "User not found" });
     }
+
+    const user = result.rows[0];
+    if (!user.status) {
+      return res.status(200).json({ status: false, data: {}, message: "Account suspended." });
+    }
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -218,8 +224,8 @@ app.post('/call', express.urlencoded({ extended: false }), async (req, res) => {
   const user = userResult.rows[0];
 
   // 拦截逻辑：如果没有用户、账号停机、或余额小于 10
-  if (!user || !user.status || parseFloat(user.balance) < 10) {
-    if (user && user.status && parseFloat(user.balance) < 10) {
+  if (!user || !user.status || parseFloat(user.balance) < 1) {
+    if (user && user.status && parseFloat(user.balance) < 1) {
       await client.query("UPDATE users SET status = false WHERE id = $1", [user.id]);
     }
     response.say({ language: 'en-US' }, "We are sorry, this service is currently unavailable. Please contact support.");
@@ -302,7 +308,7 @@ app.post('/make-call', async (req, res) => {
       WHERE p.phone_number = $1`, [phoneNumber]);
 
     const user = userRes.rows[0];
-    if (!user || !user.status || parseFloat(user.balance) < 10) {
+    if (!user || !user.status || parseFloat(user.balance) < 1) {
       return res.status(403).json({ message: 'Low balance' });
     }
 
@@ -671,7 +677,7 @@ app.get('/export-call-history/:phoneNumber', async (req, res) => {
     );
 
     if (userRes.rows.length === 0) {
-      return res.status(404).json({ status: false, message: 'Phone number owner not found.' });
+      return res.status(200).json({ status: false, message: 'Phone number owner not found.' });
     }
 
     let user = userRes.rows[0];
@@ -756,6 +762,6 @@ app.post('/status-callback', async (req, res) => {
 });
 
 // 啟動伺服器
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
 });

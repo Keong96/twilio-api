@@ -2,30 +2,30 @@ version: '3.8'
 
 services:
   # Twilio 专属数据库
-  twilio_db:
+  twilio_topup_db:
     image: postgres:15-alpine
-    container_name: twilio_db
+    container_name: twilio_topup_db
     restart: always
     environment:
-      POSTGRES_USER: twilio_user
-      POSTGRES_PASSWORD: twilio_password
-      POSTGRES_DB: twilio_database
+      POSTGRES_USER: twilio_topup_user
+      POSTGRES_PASSWORD: twilio_topup_password
+      POSTGRES_DB: twilio_topup_database
       TZ: Asia/Kuala_Lumpur
     volumes:
       - ./pgdata:/var/lib/postgresql/data
     ports:
       # 外部连接端口 (给 pgAdmin 用的)
-      - "127.0.0.1:5436:5432"
+      - "127.0.0.1:5438:5432"
     networks:
       - twilio_net
 
-  # Twilio App
-  twilio_app:
+  # Twilio Topup App
+  twilio_topup_app:
     build: .
-    container_name: twilio_app
+    container_name: twilio_topup_app
     restart: always
     depends_on:
-      - twilio_db
+      - twilio_topup_db
     env_file:
       - .env
     networks:

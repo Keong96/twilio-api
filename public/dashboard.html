@@ -424,7 +424,7 @@
       const { balance } = response.data;
       const numBalance = parseFloat(balance);
 
-      if (numBalance < 10) {
+      if (numBalance < 5) {
         balanceEl.style.color = "red";
         balanceEl.textContent = `Balance: $${numBalance.toFixed(2)} - LOW BALANCE`;
       } else {
