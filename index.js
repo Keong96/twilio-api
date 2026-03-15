@@ -287,14 +287,17 @@ app.post('/call-not-available', express.urlencoded({ extended: false }), async (
 
 // 處理來電 Webhook
 app.post('/direct-transfer/:number', express.urlencoded({ extended: false }), (req, res) => {
-  const response = new twilio.twiml.VoiceResponse();
-  const forwardTo = req.params.number; // e.g. +60123456789
+  const forwardTo = decodeURIComponent(req.params.number);
 
-  response.dial(forwardTo);
+  const dialOptions = {
+    callerId: req.body.To || '+YOUR_TWILIO_NUMBER'
+  };
+
+  const response = new twilio.twiml.VoiceResponse();
+  response.dial(forwardTo, dialOptions);
+
   res.type('text/xml').send(response.toString());
 });
-
-
 
 // 測試撥打電話
 app.post('/make-call', async (req, res) => {
@@ -375,53 +378,46 @@ app.post('/make-call', async (req, res) => {
 app.post('/voice-response', async (req, res) => {  
   const twiml = new twilio.twiml.VoiceResponse();
   const caller = req.body.Caller || '';
-  
-  let conferenceRoom = req.query.room;
-  if (!conferenceRoom) {
-    conferenceRoom = "ROOM-" + caller.replace(/^client:/, '');
-  }
+  const conferenceRoom = "ROOM-"+caller.replace(/^client:/, '');
 
-  const expectedCustomer = req.body.ExpectedCustomer;
-  const isAgent = caller.startsWith('client:');
+  try {
+    const conferences = await twilio_client.conferences.list({
+      friendlyName: conferenceRoom,
+      status: 'in-progress'
+    });
 
-  if (isAgent) {
-    try {
-      const conferences = await twilio_client.conferences.list({
-        friendlyName: conferenceRoom,
-        status: 'in-progress',
-        limit: 1
-      });
-      
-      if (conferences.length > 0) {
-        const confSid = conferences[0].sid;
-        const participants = await twilio_client.conferences(confSid).participants.list();
-        
-        let targetFound = false;
+    if (conferences.length > 0) {
+      const activeConference = conferences[0];
+      const participants = await twilio_client.conferences(activeConference.sid)
+        .participants
+        .list();
 
-        if (expectedCustomer) {
-            targetFound = participants.some(p => p.label && p.label.includes(expectedCustomer));
-        }
-
-        if (!targetFound) {
-           await twilio_client.conferences(confSid).update({ status: 'completed' });
-           await new Promise(r => setTimeout(r, 1000)); 
-        }
+      if (participants.length >= 2) {
+        twiml.reject();
+        return res.type('text/xml').send(twiml.toString());
       }
-    } catch (e) { console.error(e); }
-  } else {
-    console.log(`👤 客户进场，直接加入: ${conferenceRoom}`);
+      
+      const duplicate = participants.find(p => p.callSid === req.body.CallSid);
+      if (duplicate) {
+        twiml.reject();
+        return res.type('text/xml').send(twiml.toString());
+      }
+    }
+  } catch (error) {
+    console.error("Error checking active conference:", error);
+    twiml.reject();
+    return res.type('text/xml').send(twiml.toString());
   }
 
-  const dial = twiml.dial();
-  dial.conference({
+  twiml.dial().conference(conferenceRoom, {
     startConferenceOnEnter: true,
     endConferenceOnExit: true,
     maxParticipants: 2,
     region: 'sg1' 
-  }, conferenceRoom);
-
+});
   res.type('text/xml').send(twiml.toString());
 });
+
 
 app.post('/hold-participant', async (req, res) => {
   const conferenceName = req.body.conferenceName;
