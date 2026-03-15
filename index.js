@@ -286,17 +286,109 @@ app.post('/call-not-available', express.urlencoded({ extended: false }), async (
 });
 
 // 處理來電 Webhook
-app.post('/direct-transfer/:number', express.urlencoded({ extended: false }), (req, res) => {
-  const forwardTo = decodeURIComponent(req.params.number);
+app.post('/direct-transfer/:number', express.urlencoded({ extended: false }), async (req, res) => {
+  let forwardTo = req.params.number;
+  if (!forwardTo.startsWith('+')) forwardTo = '+' + forwardTo;
 
-  const dialOptions = {
-    callerId: req.body.To || '+YOUR_TWILIO_NUMBER'
-  };
+  const incomingCallSid = req.body.CallSid;
+  const twilioNumber = req.body.To;
+
+  const conferenceName = `direct-${incomingCallSid}`;
 
   const response = new twilio.twiml.VoiceResponse();
-  response.dial(forwardTo, dialOptions);
+
+  response.dial().conference({
+    startConferenceOnEnter: true,
+    endConferenceOnExit: true,
+    beep: false
+  }, conferenceName);
 
   res.type('text/xml').send(response.toString());
+
+  try {
+    await twilio_client.calls.create({
+      to: forwardTo,
+      from: twilioNumber,
+      url: `${BASE_URL}/join-conference/${encodeURIComponent(conferenceName)}`,
+      method: 'POST'
+    });
+  } catch (err) {
+    console.error('Error calling forward number:', err);
+  }
+});
+
+app.post('/join-conference/:confName', express.urlencoded({ extended: false }), (req, res) => {
+  const confName = decodeURIComponent(req.params.confName);
+
+  const response = new twilio.twiml.VoiceResponse();
+  response.dial().conference({
+    startConferenceOnEnter: true,
+    endConferenceOnExit: true,
+    beep: false
+  }, confName);
+
+  res.type('text/xml').send(response.toString());
+});
+
+// 處理用戶輸入
+app.post('/process-input', express.urlencoded({ extended: false }), async (req, res) => {
+    const response = new twilio.twiml.VoiceResponse();
+    const userInput = req.body.Digits;
+    const phoneNumber = req.body.To;
+    const selectedLanguage = (await client.query('SELECT language FROM phone_numbers WHERE phone_number = $1', [phoneNumber])).rows[0]?.language;
+    const result = await client.query('SELECT * FROM phone_settings WHERE phone_number = $1', [phoneNumber]);
+
+    const settings = result.rows.find(row => row.digit === Number(userInput));
+
+    if (settings) {
+      if (selectedLanguage === 'cmn') {
+        response.say(
+          { language: 'cmn-CN', voice: 'Polly.Zhiyu' },
+          '<speak><prosody rate="slow">请稍候，我们正在为您转接。</prosody></speak>'
+        );
+      } else if (selectedLanguage === 'en') {
+        response.say(
+          { language: 'en-US', voice: 'Polly.Joanna' },
+          '<speak><prosody rate="slow">Please wait, we are transferring your call.</prosody></speak>'
+        );
+      } else if (selectedLanguage === 'ms') {
+        response.say(
+          { language: 'ms-MY', voice: 'Google.ms-MY-Standard-A' },
+          '<speak><prosody rate="slow">Sila tunggu, kami sedang memindahkan panggilan anda.</prosody></speak>'
+        );
+      }
+      
+      response.pause({ length: 2 });
+      let dialOptions = { answerOnBridge: false };
+
+      dialOptions.callerId = phoneNumber;
+      
+      // if (result.rows[0].cover_number) {
+      //   dialOptions.callerId = phoneNumber;
+      // }
+
+      const targetNumber = normalizePhoneNumber(settings.redirect_to);
+      
+      console.log('Redirecting to:', targetNumber);
+      response.dial(dialOptions, targetNumber);
+      
+    } else {
+      if (selectedLanguage === 'cmn') {
+        response.say({ language: 'cmn-CN', voice: 'Polly.Zhiyu' }, '<speak><prosody rate="slow">無效的選擇，請重試。</prosody></speak>');
+      } else if (selectedLanguage === 'en') {
+        response.say({ language: 'en-US', voice: 'Polly.Joanna' }, '<speak><prosody rate="slow">Invalid selection, please try again.</prosody></speak>');
+      } else if (selectedLanguage === 'ms') {
+        response.say({ language: 'ms-MY', voice: 'Google.ms-MY-Standard-A' }, '<speak><prosody rate="slow">Pilihan tidak sah, sila cuba lagi.</prosody></speak>');
+      }      
+      const gather = response.gather({
+        numDigits: 1,
+        action: `${BASE_URL}/process-input`,
+        method: 'POST'
+      });
+    }
+
+    res.type('text/xml');
+    res.send(response.toString());
 });
 
 // 測試撥打電話
